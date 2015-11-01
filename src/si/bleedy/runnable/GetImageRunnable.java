@@ -20,10 +20,10 @@ import javax.imageio.ImageIO;
 import com.atul.JavaOpenCV.Imshow;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
-import org.opencv.highgui.Highgui;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.video.BackgroundSubtractorMOG;
 import org.opencv.video.BackgroundSubtractorMOG2;
+import org.opencv.video.Video;
 
 /**
  * @author DusanM
@@ -35,6 +35,7 @@ public class GetImageRunnable implements Runnable
   private BufferedImage m_temporaryImageInMemory;
   private Long m_lastChange, m_avgMillis = 1000L;
   private byte[] m_oldBytes;
+
   public GetImageRunnable(String address)
   {
     m_address = address;
@@ -46,12 +47,17 @@ public class GetImageRunnable implements Runnable
     try
     {
       URL url = new URL(m_address);
-      String filename = m_address.substring(m_address.lastIndexOf("/") + 1,  m_address.indexOf(".jp"));
-      BackgroundSubtractorMOG2 bs = new BackgroundSubtractorMOG2(5, 16, true);
-      Mat fgMaskMOG = new Mat();
-      Mat gray = new Mat();
-      Imshow im = new Imshow("Current");
-      Imshow imb = new Imshow("Background");
+      String filename = m_address.substring(m_address.lastIndexOf("/") + 1, m_address.indexOf(".jp"));
+      //BackgroundSubtractorMOG2 bs = Video.createBackgroundSubtractorMOG2(15, 32, false);
+      //Mat fgMaskMOG = new Mat();
+      //Mat gray = new Mat();
+      //Imshow im = new Imshow("Current");
+      //Imshow imb = new Imshow("Background");
+      File directory = new File("data/" + filename + "/");
+      if (!directory.exists())
+      {
+        directory.mkdir();
+      }
       while (true)
       {
         try
@@ -76,21 +82,22 @@ public class GetImageRunnable implements Runnable
             //m_temporaryImageInMemory = bufferedImage;
             ByteArrayInputStream byteStream = new ByteArrayInputStream(currentBytes);
             m_temporaryImageInMemory = ImageIO.read(byteStream);
-            File file = new File("data/" + filename + "_" + m_formatter.format(new Date(System.currentTimeMillis())) + ".jpg");
+
+            File file = new File(directory, m_formatter.format(new Date(System.currentTimeMillis())) + ".jpg");
             ImageIO.write(m_temporaryImageInMemory, "JPEG", file);
-            Mat mat = Highgui.imdecode(new MatOfByte(currentBytes), Highgui.IMREAD_UNCHANGED);
-            Imgproc.cvtColor(mat, gray, Imgproc.COLOR_RGB2GRAY);
-            bs.apply(gray, fgMaskMOG);
+            //Mat mat = Imgcodecs.imdecode(new MatOfByte(currentBytes), Imgcodecs.IMREAD_UNCHANGED);
+            //Imgproc.cvtColor(mat, gray, Imgproc.COLOR_RGB2GRAY);
+            //bs.apply(gray, fgMaskMOG);
             //Metadata metadata = ImageMetadataReader.readMetadata(new ByteArrayInputStream(m_temporaryImageInMemory));
             //Imshow im = new Imshow("Title");
-            im.showImage(gray);
-            imb.showImage(fgMaskMOG);
+            //im.showImage(gray);
+            //imb.showImage(fgMaskMOG);
             if (m_lastChange != null)
             {
               long millis = System.currentTimeMillis() - m_lastChange;
               m_avgMillis += millis;
               m_avgMillis /= 2;
-              System.out.println("Last change happened " + parseReadableTime(millis, true) + " ago.");
+              System.out.println("Last change for " + filename + " happened " + parseReadableTime(millis, true) + " ago.");
             }
             m_lastChange = System.currentTimeMillis();
             m_oldBytes = currentBytes;
@@ -150,7 +157,7 @@ public class GetImageRunnable implements Runnable
     byte[] temporaryImageInMemory = readStream(inputStream);
 
     // Decode into mat. Use any IMREAD_ option that describes your image appropriately
-    Mat outputImage = Highgui.imdecode(new MatOfByte(temporaryImageInMemory), Highgui.IMREAD_UNCHANGED);
+    Mat outputImage = Imgcodecs.imdecode(new MatOfByte(temporaryImageInMemory), Imgcodecs.IMREAD_UNCHANGED);
 
     return outputImage;
   }
@@ -191,5 +198,4 @@ public class GetImageRunnable implements Runnable
     }
     return time;
   }
-
 }

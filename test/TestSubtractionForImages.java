@@ -3,21 +3,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.ArrayList;
 import javax.imageio.ImageIO;
 
 import com.atul.JavaOpenCV.Imshow;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
 import org.opencv.core.Size;
-import org.opencv.highgui.Highgui;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.video.BackgroundSubtractorMOG;
 import org.opencv.video.BackgroundSubtractorMOG2;
+import org.opencv.video.Video;
 
 /**
  * @author DusanM
@@ -44,7 +40,7 @@ public class TestSubtractionForImages
     Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, new Size(4, 4));
     Mat dilationKernel = Imgproc.getStructuringElement(Imgproc.MORPH_DILATE, new Size(2, 2));
     //BackgroundSubtractorMOG2 bs = new BackgroundSubtractorMOG2(15, 32, false);
-    BackgroundSubtractorMOG bs = new BackgroundSubtractorMOG(15, 2, 0.6, 0);
+    BackgroundSubtractorMOG2 bs = Video.createBackgroundSubtractorMOG2(5, 16, false);
     Mat fgMaskMOG = new Mat();
     Mat fgMaskMOGShow = new Mat();
     Mat gray = new Mat();
@@ -63,7 +59,7 @@ public class TestSubtractionForImages
           ByteArrayOutputStream baos = new ByteArrayOutputStream();
           ImageIO.write(img, "jpg", baos);
           byte[] imageInByte = baos.toByteArray();
-          Mat mat = Highgui.imdecode(new MatOfByte(imageInByte), Highgui.IMREAD_UNCHANGED);
+          Mat mat = Imgcodecs.imdecode(new MatOfByte(imageInByte), Imgcodecs.IMREAD_UNCHANGED);
           Imgproc.cvtColor(mat, gray, Imgproc.COLOR_RGB2GRAY);
           //Imgproc.blur(gray, gray, new Size(5, 5));
           bs.apply(gray, fgMaskMOGShow, 0.05);
