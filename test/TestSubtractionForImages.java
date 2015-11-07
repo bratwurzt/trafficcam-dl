@@ -36,8 +36,8 @@ public class TestSubtractionForImages
 
   public static void main(String[] args)
   {
-    File dir = new File("data/");
-    Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, new Size(4, 4));
+    File dir = new File("data/K24_Rudnik_SD_1/");
+    Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, new Size(2, 2));
     Mat dilationKernel = Imgproc.getStructuringElement(Imgproc.MORPH_DILATE, new Size(2, 2));
     //BackgroundSubtractorMOG2 bs = new BackgroundSubtractorMOG2(15, 32, false);
     BackgroundSubtractorMOG2 bs = Video.createBackgroundSubtractorMOG2(5, 16, false);
@@ -46,7 +46,7 @@ public class TestSubtractionForImages
     Mat gray = new Mat();
     Imshow im = new Imshow("Current");
     Imshow imb = new Imshow("Background");
-    //Imshow imc = new Imshow("Contours");
+    Imshow imc = new Imshow("Contours");
     if (dir.isDirectory())
     {
       for (File image : dir.listFiles(IMAGE_FILTER))
@@ -62,9 +62,9 @@ public class TestSubtractionForImages
           Mat mat = Imgcodecs.imdecode(new MatOfByte(imageInByte), Imgcodecs.IMREAD_UNCHANGED);
           Imgproc.cvtColor(mat, gray, Imgproc.COLOR_RGB2GRAY);
           //Imgproc.blur(gray, gray, new Size(5, 5));
-          bs.apply(gray, fgMaskMOGShow, 0.05);
+          bs.apply(gray, fgMaskMOG, 0.05);
           //Imgproc.blur(fgMaskMOG, fgMaskMOGShow, new Size(10, 10));
-          //Imgproc.threshold(fgMaskMOG, fgMaskMOGShow, 100, 255, Imgproc.THRESH_BINARY);
+          Imgproc.threshold(gray, fgMaskMOGShow, 254, 255, Imgproc.THRESH_BINARY);
           Imgproc.morphologyEx(fgMaskMOGShow, fgMaskMOGShow, Imgproc.MORPH_OPEN, kernel);
           //Imgproc.erode(fgMaskMOGShow, fgMaskMOGShow, dilationKernel);
           //ArrayList<MatOfPoint> contours = new ArrayList<>();
@@ -76,7 +76,7 @@ public class TestSubtractionForImages
           //  Imgproc.drawContours(c, contours, i, new Scalar(255, 255, 255), 2, 7, hierarchy, 0, new Point());
           //}
           im.showImage(mat);
-          //imc.showImage(c);
+          imc.showImage(fgMaskMOG);
           imb.showImage(fgMaskMOGShow);
           Thread.sleep(200);
         }

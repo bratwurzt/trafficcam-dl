@@ -1,7 +1,6 @@
 package si.bleedy.runnable;
 
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -14,27 +13,25 @@ import java.net.URLConnection;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
-
 import javax.imageio.ImageIO;
 
-import com.atul.JavaOpenCV.Imshow;
+import org.apache.log4j.Logger;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.imgcodecs.Imgcodecs;
-import org.opencv.imgproc.Imgproc;
-import org.opencv.video.BackgroundSubtractorMOG2;
-import org.opencv.video.Video;
 
 /**
  * @author DusanM
  */
 public class GetImageRunnable implements Runnable
 {
+  private static final Logger LOG = Logger.getLogger(GetImageRunnable.class);
   private SimpleDateFormat m_formatter = new SimpleDateFormat("yyyyMMddHHmmss");
   private String m_address;
   private BufferedImage m_temporaryImageInMemory;
-  private Long m_lastChange, m_avgMillis = 1000L;
+  private Long m_lastChange, m_avgMillis = 10000L;
   private byte[] m_oldBytes;
+  private int m_missed, m_notMissed;
 
   public GetImageRunnable(String address)
   {
@@ -58,6 +55,8 @@ public class GetImageRunnable implements Runnable
       {
         directory.mkdir();
       }
+      m_missed = -1;
+      m_notMissed = 0;
       while (true)
       {
         try
@@ -95,26 +94,44 @@ public class GetImageRunnable implements Runnable
             if (m_lastChange != null)
             {
               long millis = System.currentTimeMillis() - m_lastChange;
-              m_avgMillis += millis;
-              m_avgMillis /= 2;
-              System.out.println("Last change for " + filename + " happened " + parseReadableTime(millis, true) + " ago.");
+              if (m_missed != 0)
+              {
+                m_avgMillis += millis;
+                m_avgMillis /= 2;
+                //m_avgMillis -= 1000;
+              }
+              else
+              {
+                m_notMissed++;
+                if (m_notMissed > 50)
+                {
+                  m_avgMillis -= 1000;
+                }
+              }
+              //LOG.info("Last change for " + filename + " happened " + parseReadableTime(millis, true) + " ago.");
+              m_missed = 0;
             }
             m_lastChange = System.currentTimeMillis();
             m_oldBytes = currentBytes;
+            LOG.info(filename + " image written. Next in " + parseReadableTime(m_avgMillis, true));
+            Thread.sleep(m_avgMillis);
           }
           else
           {
-            //System.out.println("Still the same!");
+            m_missed++;
+            m_notMissed = 0;
+            long millis = m_avgMillis * m_missed / 10;
+            //LOG.debug(filename + " sleeping for " + parseReadableTime(millis, true));
+            Thread.sleep(millis);
           }
-          Thread.sleep(m_avgMillis);
         }
         catch (IOException e)
         {
-          e.printStackTrace();
+          LOG.error(e);
         }
         catch (InterruptedException e)
         {
-          e.printStackTrace();
+          LOG.info(e);
         }
       }
     }
