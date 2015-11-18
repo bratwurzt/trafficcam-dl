@@ -5,11 +5,26 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+import javax.json.stream.JsonParser;
 
 /**
  * @author bratwurzt
@@ -30,23 +45,35 @@ public class TestReadCounters
       connection.addRequestProperty("Accept-Language", "en-US,en;q=0.8,sl;q=0.6,de;q=0.4");
       connection.addRequestProperty("Upgrade-Insecure-Requests", "1");
       connection.connect();
-      InputStream is = connection.getInputStream();
-      String response = readResponse(is, connection);
-      response = response.replaceAll("^[\\s]+", response);
-      StringBuilder b = new StringBuilder();
-      for (int i = 0; i < response.length(); i += 2)
+      try (InputStream is = connection.getInputStream())
       {
-        b.append((char)(255 - response.charAt(i)));
+        String response = readResponse(is, connection);
+        response = response.replaceAll("^[\\s]+", response);
+        StringBuffer b = new StringBuffer();
+        for (int i = 0; i < response.length(); i += 2)
+        {
+          b.append((char)(255 - response.charAt(i)));
+        }
+        if (response.length() > 0 && response.length() % 2 == 1)
+        {
+          response = response.substring(0, response.length() - 1);
+        }
+        for (int i = response.length() - 1; i >= 0; i -= 2)
+        {
+          b.append((char)(255 - response.charAt(i)));
+        }
+        String replaceAll = b.toString().replaceAll("(new Date\\(.*?\\))+", "\"$1\"");
+        replaceAll = replaceAll.substring(1, replaceAll.length() - 1);
+        try (JsonReader reader = Json.createReader(new StringReader(b.toString())))
+        {
+          JsonObject object = reader.readObject();
+          System.out.println();
+        }
       }
-      if (response.length() > 0 && response.length() % 2 == 1)
+      catch (IOException e)
       {
-        response = response.substring(0, response.length() - 1);
+        e.printStackTrace();
       }
-      for (int i = response.length() - 1; i >= 0; i -= 2)
-      {
-        b.append((char)(255 - response.charAt(i)));
-      }
-      System.out.println();
     }
     catch (IOException e)
     {
@@ -72,7 +99,6 @@ public class TestReadCounters
     stream.close();
     return temporaryImageInMemory;
   }
-
 
   private static String readResponse(InputStream ins, HttpURLConnection connection) throws IOException
   {
@@ -129,5 +155,4 @@ public class TestReadCounters
     }
     return charset;
   }
-
 }
