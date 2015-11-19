@@ -113,7 +113,7 @@ public class GetImageRunnable implements Runnable
             }
             m_lastChange = System.currentTimeMillis();
             m_oldBytes = currentBytes;
-            LOG.info(filename + " image written. Next in " + parseReadableTime(m_avgMillis, true));
+            //LOG.info(filename + " image written. Next in " + parseReadableTime(m_avgMillis, true));
             Thread.sleep(m_avgMillis);
           }
           else
@@ -127,11 +127,11 @@ public class GetImageRunnable implements Runnable
         }
         catch (IOException e)
         {
-          LOG.error(e);
+          //LOG.error(e);
         }
         catch (InterruptedException e)
         {
-          LOG.info(e);
+          //LOG.info(e);
         }
       }
     }

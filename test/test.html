@@ -1,0 +1,425 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" >
+<head id="ctl01_Head1"><meta http-equiv="X-UA-Compatible" content="IE=7" /><title>
+	Prometno-informacijski center - Števci prometa
+</title>
+<link rel='stylesheet' type='text/css' href='http://ajax.googleapis.com/ajax/libs/yui/2.6.0/build/tabview/assets/skins/sam/tabview.css' />
+<link href='http://www.promet.si/portal/sl/Data/Sites/1/skins/realis-promet/csshandler.ashx?skin=realis-promet&amp;config=style.config&amp;add=' type='text/css' rel='stylesheet' />
+<!--[if lt IE 7]>
+<link rel="stylesheet" href="http://www.promet.si/portal/sl/Data/Sites/1/skins/realis-promet/IESpecific.css" type="text/css" id="IEMenuCSS" />
+<![endif]-->
+<!--[if gt IE 6]>
+<link rel="stylesheet" href="http://www.promet.si/portal/sl/Data/Sites/1/skins/realis-promet/IE7Specific.css" type="text/css" id="IE7MenuCSS" />
+<![endif]-->
+
+<meta name="description" content="Prometni informacijski center za državne ceste v Republiki Sloveniji." />
+<meta name="keywords" content="Prometno informacijski center, PIC DARS, Republika Slovenija, informacije o prometu, prometne informacije, prometne novice, prometno poročilo, vreme, cestne kamere, števci prometa, tovorni promet, mejni prehodi, prometni predpisi, načrtovanje poti" />
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
+<link rel='shortcut icon' href='http://www.promet.si/portal/sl/Data/Sites/1/skins/realis-promet/favicon.ico' /><meta name="viewport" content="width=670, initial-scale=0.45, minimum-scale=0.45" />
+	<style type="text/css" media="print">
+		.RMapNonPrintable {visibility:hidden; display:none}
+		.pagebody {background-color:#ffffff}
+	</style>
+	<script type="text/javascript">
+		if (!document.createComment)
+			document.createComment = function() { var d = document.createElement("span"); d.style.display = "none"; return d; } //zaradi JQuery & IE5.5
+	</script>
+
+<script type="text/javascript">
+	function getCC()
+	{
+		return document.cookie.indexOf("REALISCC") >= 0
+	}
+	function setCC()
+	{
+		var expiry = new Date();
+		expiry.setDate(expiry.getDate() + 356);
+		document.cookie = "REALISCC=yes; path=/; expires=" + expiry.toUTCString();
+	}
+	function confirmCC()
+	{
+		var bar = document.getElementById("REALISCCBAR");
+		bar.style.display = "none";
+		setCC();                               
+	}
+	function removeElement(element) 
+	{
+		element && element.parentNode && element.parentNode.removeChild(element);
+	}
+	function checkCC()
+	{
+		if(!getCC())
+		{                              
+			var bar = document.getElementById("REALISCCBAR");
+			bar.style.display = "";
+		}
+		else
+		{
+			setCC();
+		}
+	}
+</script>
+
+	
+
+<link rel='canonical' href='http://www.promet.si/portal/sl/stevci-prometa.aspx' /><style type="text/css">
+	.ctl01_SiteMenu1_ctl00_0 { background-color:white;visibility:hidden;display:none;position:absolute;left:0px;top:0px; }
+	.ctl01_SiteMenu1_ctl00_1 { text-decoration:none; }
+	.ctl01_SiteMenu1_ctl00_2 {  }
+	.ctl01_PageMenu1_ctl00_0 { text-decoration:none; }
+
+</style></head>
+<body class="pagebody">
+<form method="post" action="/portal/sl/stevci-prometa.aspx" id="aspnetForm">
+<div>
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__VIEWSTATEFIELDCOUNT" id="__VIEWSTATEFIELDCOUNT" value="32" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwUKMjA1OTAyNzk1MQ9kFgJmD2QWAgIDD2QWDmYPFgIeD1NpdGVNYXBQcm92aWRlcgUJbW9qb3NpdGUxZAIBDxYEHwAFCW1v" />
+<input type="hidden" name="__VIEWSTATE1" id="__VIEWSTATE1" value="am9zaXRlMR4PU3RhcnRpbmdOb2RlVXJsBRh+L3Jhem1lcmUtbmEtY2VzdGFoLmFzcHhkAgUPZBYCAgEPDxYCHgdWaXNpYmxlaGRk" />
+<input type="hidden" name="__VIEWSTATE2" id="__VIEWSTATE2" value="AgcPZBYCZg8PZBYCHgVzdHlsZQUPZGlzcGxheTppbmxpbmU7FgYCAQ9kFgJmDw8WAh4EVGV4dAULU2l0ZSBTZWFyY2hkZAIFDw8W" />
+<input type="hidden" name="__VIEWSTATE3" id="__VIEWSTATE3" value="BB4LUG9zdEJhY2tVcmwFMWh0dHA6Ly93d3cucHJvbWV0LnNpL3BvcnRhbC9zbC9TZWFyY2hSZXN1bHRzLmFzcHgfBAUGScWhxI1p" />
+<input type="hidden" name="__VIEWSTATE4" id="__VIEWSTATE4" value="ZGQCBw8PFgIfBQUxaHR0cDovL3d3dy5wcm9tZXQuc2kvcG9ydGFsL3NsL1NlYXJjaFJlc3VsdHMuYXNweGRkAgkPDxYEHghDc3ND" />
+<input type="hidden" name="__VIEWSTATE5" id="__VIEWSTATE5" value="bGFzcwUUbGVmdHNpZGUgbGVmdDJjb2x1bW4eBF8hU0ICAmQWBAIBD2QWAmYQPCsACQIADxYSHhRDb2xsYXBzZUltYWdlVG9vbFRp" />
+<input type="hidden" name="__VIEWSTATE6" id="__VIEWSTATE6" value="cAUTQ29sbGFwc2UgdGhpcyBub2RlLh4NUGF0aFNlcGFyYXRvcgR8HgtFeHBhbmREZXB0aGYeEkV4cGFuZEltYWdlVG9vbFRpcAUR" />
+<input type="hidden" name="__VIEWSTATE7" id="__VIEWSTATE7" value="RXhwYW5kIHRoaXMgbm9kZS4eElNob3dFeHBhbmRDb2xsYXBzZWceDU5ldmVyRXhwYW5kZWRkHgtfIURhdGFCb3VuZGceF1BvcHVs" />
+<input type="hidden" name="__VIEWSTATE8" id="__VIEWSTATE8" value="YXRlTm9kZXNGcm9tQ2xpZW50Zx4MRGF0YVNvdXJjZUlEBRFQYWdlTWFwRGF0YVNvdXJjZWQIFCsACAUjMDowLDA6MSwwOjIsMDoz" />
+<input type="hidden" name="__VIEWSTATE9" id="__VIEWSTATE9" value="LDA6NCwwOjUsMDo2LDE6NiwwOjYUKwACFg4fBAURUmF6bWVyZSBuYSBjZXN0YWgeBVZhbHVlBSRhYzQ2ZGZlOC1iNTIwLTQ0YTIt" />
+<input type="hidden" name="__VIEWSTATE10" id="__VIEWSTATE10" value="OGQ2ZC0zZjY4MzUzY2YwNTAeC05hdmlnYXRlVXJsBQ5+L3Jhem1lcmUuYXNweB4HVG9vbFRpcAURUmF6bWVyZSBuYSBjZXN0YWge" />
+<input type="hidden" name="__VIEWSTATE11" id="__VIEWSTATE11" value="CERhdGFQYXRoBQE4HglEYXRhQm91bmRnHhBQb3B1bGF0ZU9uRGVtYW5kZ2QUKwACFgwfBAUNQ2VzdG5lIGthbWVyZR8RBSQ1YWJl" />
+<input type="hidden" name="__VIEWSTATE12" id="__VIEWSTATE12" value="YzUyZi1kYTEyLTQyMDQtYTJlZi0wZTEzZmIwYWNmYmYfEgUUfi9jZXN0bmUta2FtZXJlLmFzcHgfEwUNQ2VzdG5lIGthbWVyZR8U" />
+<input type="hidden" name="__VIEWSTATE13" id="__VIEWSTATE13" value="BQI2Mh8VZ2QUKwACFhQfEQUkOWJmODRhZmMtZWI1MS00ZTA5LTg3ZTItMTlmYzAzOWRlNWI5HxVnHwQFD8WgdGV2Y2kgcHJvbWV0" />
+<input type="hidden" name="__VIEWSTATE14" id="__VIEWSTATE14" value="YR8SBRV+L3N0ZXZjaS1wcm9tZXRhLmFzcHgeCFNlbGVjdGVkZx4JUG9wdWxhdGVkZx4IRXhwYW5kZWRnHxMFD8WgdGV2Y2kgcHJv" />
+<input type="hidden" name="__VIEWSTATE15" id="__VIEWSTATE15" value="bWV0YR8UBQI2Mx8WaBQrAAMFBzA6MCwwOjEUKwACFgwfBAUYUmF6bGFnYSBwb3NhbWV6bmloIHN0YW5qHxEFJDFhOGQ1Y2VlLTc3" />
+<input type="hidden" name="__VIEWSTATE16" id="__VIEWSTATE16" value="NzEtNGJhNi05NTllLWIwMjRiYzJlODBiNh8SBR9+L3JhemxhZ2EtcG9zYW1lem5paC1zdGFuai5hc3B4HxMFGFJhemxhZ2EgcG9z" />
+<input type="hidden" name="__VIEWSTATE17" id="__VIEWSTATE17" value="YW1lem5paCBzdGFuah8UBQI2NB8VZ2QUKwACFgwfBAUWWmJpcm5pIHBvZGF0a2kgKGFyaGl2KR8RBSQ3MGUzNWMzZS1mMmU5LTRj" />
+<input type="hidden" name="__VIEWSTATE18" id="__VIEWSTATE18" value="YmYtOTk1NS1kZmJiM2VjYmJlZDkfEgUnfi9wb2RhdGtpLW8tcHJvbWV0bmloLW9icmVtZW5pdHZhaC5hc3B4HxMFFlpiaXJuaSBw" />
+<input type="hidden" name="__VIEWSTATE19" id="__VIEWSTATE19" value="b2RhdGtpIChhcmhpdikfFAUCNjUfFWdkFCsAAhYMHwQFEFByb21ldG5pIGtvbGVkYXIfEQUkYTUwZDI0NjMtYjQyOC00NTg4LWJh" />
+<input type="hidden" name="__VIEWSTATE20" id="__VIEWSTATE20" value="ODgtOWRmY2M3M2ZiNTY5HxIFF34vcHJvbWV0bmkta29sZWRhci5hc3B4HxMFEFByb21ldG5pIGtvbGVkYXIfFAUCMjMfFWdkFCsA" />
+<input type="hidden" name="__VIEWSTATE21" id="__VIEWSTATE21" value="AhYOHwQFG01lcmlsbmEgbWVzdGEgc2lzdGVtYSBCdXJqYR8RBSRjYmFkY2Q1ZC00MTliLTQxYTUtYmNmZS0wZDkxNjcyMmU1Nzgf" />
+<input type="hidden" name="__VIEWSTATE22" id="__VIEWSTATE22" value="EgUifi9tZXJpbG5hLW1lc3RhLXNpc3RlbWEtYnVyamEuYXNweB8TBRtNZXJpbG5hIG1lc3RhIHNpc3RlbWEgQnVyamEfFAUCNjcf" />
+<input type="hidden" name="__VIEWSTATE23" id="__VIEWSTATE23" value="FWcfFmdkFCsAAhYMHwQFDE1vamUgdnNlYmluZR8RBSQ2ZGVkYWMyZS0zNzUyLTRkYzYtYjZjZS01Njk2NjRlNGZjZTUfEgUTfi9t" />
+<input type="hidden" name="__VIEWSTATE24" id="__VIEWSTATE24" value="b2plLXZzZWJpbmUuYXNweB8TBQxNb2plIHZzZWJpbmUfFAUCNzIfFWdkFCsAAhYMHwQFEFByZWRvciBLYXJhdmFua2UfEQUkN2E4" />
+<input type="hidden" name="__VIEWSTATE25" id="__VIEWSTATE25" value="ODJmMGUtYTM5Yi00Mjk2LTg0NmMtZWRmMzQ0NmUxNmNkHxIFF34vcHJlZG9yLWthcmF2YW5rZS5hc3B4HxMFEFByZWRvciBLYXJh" />
+<input type="hidden" name="__VIEWSTATE26" id="__VIEWSTATE26" value="dmFua2UfFAUCODQfFWdkBQR8bmVuZAIDD2QWBmYPZBYCAgIPDxYEHwYFKXBhbmVsd3JhcHBlciBSTWFwQ29udHJvbCBib3hCb3Jk" />
+<input type="hidden" name="__VIEWSTATE27" id="__VIEWSTATE27" value="ZXJXcmFwcGVyHwcCAmRkAgEPZBYCAgIPDxYEHwYFKXBhbmVsd3JhcHBlciBSTWFwQ29udHJvbCBib3hCb3JkZXJXcmFwcGVyHwcC" />
+<input type="hidden" name="__VIEWSTATE28" id="__VIEWSTATE28" value="AmRkAgIPZBYCAgIPDxYEHwYFKXBhbmVsd3JhcHBlciBSTWFwQ29udHJvbCBib3hCb3JkZXJXcmFwcGVyHwcCAmRkAgoPDxYEHwYF" />
+<input type="hidden" name="__VIEWSTATE29" id="__VIEWSTATE29" value="EWNlbnRlci1sZWZ0bWFyZ2luHwcCAmQWAgIDDw8WAh8CaGRkAgsPDxYCHwJoZGQYAgUeX19Db250cm9sc1JlcXVpcmVQb3N0QmFj" />
+<input type="hidden" name="__VIEWSTATE30" id="__VIEWSTATE30" value="a0tleV9fFgEFFWN0bDAxJFBhZ2VNZW51MSRjdGwwMAUVY3RsMDEkU2l0ZU1lbnUxJGN0bDAwDw9kBSQwMWZiZDAyZS0xZGY0LTQw" />
+<input type="hidden" name="__VIEWSTATE31" id="__VIEWSTATE31" value="NWEtOTk0Yy0yN2VkNzI5ODAzYzdk+UNsywAJlFZxcRBvAG4L2v7Ku1s=" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['aspnetForm'];
+if (!theForm) {
+    theForm = document.aspnetForm;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/portal/sl/WebResource.axd?d=yryfc5JLEPgTt0n0r1jdu_V7YLGyn8B7fNd8jhy_JD9mq6BEnXyhoUfc-OJ4FBusnFJTLBUQ86Pe4BvTW5Ow7VeMkvg1&amp;t=635589471467565191" type="text/javascript"></script>
+
+<script src="/portal/sl/ClientScript/watermarktextbox.js" type="text/javascript" ></script>
+<script src="/portal/sl/ClientScript/CSSFriendly/AdapterUtils.js" type="text/javascript"></script>
+<script src="/portal/sl/ClientScript/CSSFriendly/MenuAdapter.js" type="text/javascript"></script>
+<script src="/portal/sl/ClientScript/CSSFriendly/TreeViewAdapter.js" type="text/javascript"></script>
+<script src="ClientScript/Promet/AppSettings.js?v=12" type="text/javascript"></script>
+<script src="ClientScript/Promet/AppDictionary.js?v=12" type="text/javascript"></script>
+<script src="http://gis.dars.si/Realis.RMap/Realis.RMap.Client/_lib/RMap_all.js" type="text/javascript"></script>
+<script src="ClientScript/Promet/PrometCommon.js?v=12" type="text/javascript"></script>
+<script src="ClientScript/Promet/PrometBurja.js?v=12" type="text/javascript"></script>
+<script type="text/javascript">RMap.MapApplication.enableExt()</script>
+<script src="ClientScript/Promet/PrometKoledar.js?v=12" type="text/javascript"></script>
+<script src="ClientScript/Promet/PrometVreme.js?v=12" type="text/javascript"></script>
+<script src="ClientScript/Promet/PrometStevci.js?v=12" type="text/javascript"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.1/jquery.min.js" type="text/javascript" ></script>
+<script src="http://ajax.googleapis.com/ajax/libs/yui/2.6.0/build/utilities/utilities.js" type="text/javascript"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/yui/2.6.0/build/tabview/tabview-min.js" type="text/javascript"></script>
+<script  src="/portal/sl/ClientScript/oomph/oomph.min.js" type="text/javascript" ></script>
+<script src="/portal/sl/ScriptResource.axd?d=2TkTqO0WW04dTxcTs3mDy3_wvek87jc4ik2pThoUS8YGQyindNyxysruDQQ8j1j9VDJmtt3Ray-m5NjQOA_nFjguNdYA3weEYkO9QgZ0yH8PslJzootSURfNlhUz4rtuPhRIDLWuup2_KDZmiTRAkB-6rsh3GoxGM5iE9owFmpi1IEex0&amp;t=ffffffffbcb9b94a" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+if (typeof(Sys) === 'undefined') throw new Error('ASP.NET Ajax client-side framework failed to load.');
+Sys.Services._AuthenticationService.DefaultWebServicePath = 'Authentication_JSON_AppService.axd';
+Sys.Services._RoleService.DefaultWebServicePath = 'Role_JSON_AppService.axd';
+//]]>
+</script>
+
+<script src="/portal/sl/ScriptResource.axd?d=smQqv167-pmNa6GcBZofm4lwlHy-41XamGX5--57dseEE5VLNPbXsllqsKDnDLTXxD7mhjW_kReWPE0WNLIwDLaNnWF0sGJg0W2CY15tyi0XK8KIKPT8T2aGSqQGkhmn2Kg8ZsUY06q3rYhLyx7rTafB9ZMSSg4ZK8RQdKzThN4DCrXLR2mfOTSvK6x-bTrbdrWAZQ2&amp;t=ffffffffbcb9b94a" type="text/javascript"></script>
+
+
+
+<script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ctl01$ScriptManager1', document.getElementById('aspnetForm'));
+Sys.WebForms.PageRequestManager.getInstance()._updateControls([], [], [], 90);
+//]]>
+</script>
+
+
+<div id="REALISCCBAR" style="background-color:lightyellow;padding:5px;text-align:center;display:none;">
+ 
+	Naše spletno mesto uporablja piškotke in lokalni pomnilnik, s čimer zagotavljamo boljšo uporabniško izkušnjo in spremljanje statistike obiska.
+	Z izbiro opcije <a onclick="confirmCC()" href="">»Nadaljuj«</a> ali nadaljevanjem obiska spletnega mesta se s tem strinjate. <a href="kolofon.aspx">Varstvo podatkov.</a> 
+
+</div>
+<script language="javascript" type="text/javascript">
+	if(window.attachEvent)
+		window.attachEvent("onload", checkCC);
+	else if(window.addEventListener)
+		window.addEventListener("load", checkCC, false);
+</script>
+
+
+<div id="outerwrap">
+<div id="wrapwebsite">
+    <div id="wrapheader" style="background: #CCC url('/portal/sl/Data/Sites/1/skins/realis-promet/banner0.jpg') no-repeat center top;">
+	    <a href='#startcontent' class='skiplink'>Skip over navigation</a>
+        <div id="ctl01_InsecurePanel1" class="addthisbutton">
+	
+              
+        
+</div>
+        <div class="editpanel">
+        
+        </div>
+        
+<!--
+        <div class="searchpanel" style="margin-right:450px">
+					<div id="ctl01_SearchInput1_pnlSearch" class="searchpanel" onkeypress="javascript:return WebForm_FireDefaultButton(event, 'ctl01_SearchInput1_btnSearch')" style="display:inline;">
+	
+<h2 id="ctl01_SearchInput1_heading" style="position: absolute; left:-2000px; text-indent: -999em;"><label for="ctl01_SearchInput1_txtSearch" id="ctl01_SearchInput1_lblSearchHeading">Site Search</label></h2>
+<input onfocus="javascript:watermarkEnter(this, 'vnesite iskalne pojme');" onblur="javascript:watermarkLeave(this, 'vnesite iskalne pojme');" name="ctl01$SearchInput1$txtSearch" type="text" id="ctl01_SearchInput1_txtSearch" class="watermarktextbox" />
+<input type="submit" name="ctl01$SearchInput1$btnSearch" value="Išči" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl01$SearchInput1$btnSearch&quot;, &quot;&quot;, false, &quot;&quot;, &quot;http://www.promet.si/portal/sl/SearchResults.aspx&quot;, false, false))" id="ctl01_SearchInput1_btnSearch" />
+
+
+</div>
+				</div>
+-->        
+
+ 
+        <div style="position:absolute; left: 125px; top: 13px">
+					<img src="/portal/sl/Data/Sites/1/skins/realis-promet/pic_sl.gif" />
+        </div>
+        <div style="position:absolute; left: 665px; top: 14px">
+					<a href="mailto:info@promet.si"><img src="/portal/sl/Data/Sites/1/skins/realis-promet/mail.gif" /></a>
+        </div>
+        <div style="position:absolute; left: 827px; top: 7px">
+					<a href="/portal/sl/1970.aspx"><img src="/portal/sl/Data/Sites/1/skins/realis-promet/tel_sl.gif" /></a>
+        </div>                        
+        <div style="position:absolute; left: 760px; top: 67px">
+					<a href="/portal/sl/rsslist.aspx"><img src="/portal/sl/Data/Sites/1/skins/realis-promet/RSS.gif" /></a>
+        </div>
+        <div style="position:absolute; left: 840px; top: 65px">
+					<img src="/portal/sl/Data/Sites/1/skins/realis-promet/sept.gif" />
+        </div>
+        <div style="position:absolute; left: 870px; top: 66px">
+					<a href="/portal/en/"><img src="/portal/sl/Data/Sites/1/skins/realis-promet/lng_en.gif" /></a>
+        </div>        
+
+
+        
+        <div style="position:absolute; left:16px; top:4px">
+					<a href="/portal/sl/" ><img src="/portal/sl/Data/Sites/1/skins/realis-promet/blank.gif" style="width:90px; height:32px"/></a>
+        </div>  
+     
+    </div>
+    <div class="wrapmenu">
+			
+<div class="AspNet-Menu-Horizontal" id="ctl01_SiteMenu1_ctl00">
+		<ul class="AspNet-Menu">
+			<li class="AspNet-Menu-Leaf AspNet-Menu-SelectedLeaf">
+				<a href="/portal/sl/razmere-na-cestah.aspx" class="AspNet-Menu AspNet-Menu-SelectedLeaf" title="Razmere na cestah">
+					<span>Razmere na cestah</span></a>
+			</li>
+			<li class="AspNet-Menu-Leaf">
+				<a href="/portal/sl/tovorni-promet.aspx" class="AspNet-Menu" title="Tovorni promet">
+					<span>Tovorni promet</span></a>
+			</li>
+			<li class="AspNet-Menu-Leaf">
+				<a href="/portal/sl/predpisi.aspx" class="AspNet-Menu" title="Predpisi">
+					<span>Predpisi</span></a>
+			</li>
+			<li class="AspNet-Menu-Leaf">
+				<a href="/portal/sl/nacrtovanje-poti.aspx" class="AspNet-Menu" title="Načrtovanje poti">
+					<span>Načrtovanje poti</span></a>
+			</li>
+			<li class="AspNet-Menu-Leaf">
+				<a href="/portal/sl/novice.aspx" class="AspNet-Menu" title="Novice">
+					<span>Novice</span></a>
+			</li>
+			<li class="AspNet-Menu-Leaf">
+				<a href="/portal/sl/povezave.aspx" class="AspNet-Menu" title="POVEZAVE">
+					<span>POVEZAVE</span></a>
+			</li>
+		</ul>
+
+</div>
+		</div>		        
+		<div class="wrapceiling"><p></p></div>
+		
+    <div id="wrapcenter">
+	    <div id="ctl01_divLeft" class="leftside left2column">
+	
+		    
+	<div class="AspNet-TreeView" id="ctl01_PageMenu1_ctl00">
+			<ul id="ctl01_PageMenu1_ctl00_UL">
+				<li class="AspNet-TreeView-Root">
+					<a href="/portal/sl/razmere.aspx" title="Razmere na cestah">
+						Razmere na cestah</a>
+				</li>
+				<li class="AspNet-TreeView-Root AspNet-TreeView-Leaf">
+					<a href="/portal/sl/cestne-kamere.aspx" title="Cestne kamere">
+						Cestne kamere</a>
+				</li>
+				<li class="AspNet-TreeView-Root AspNet-TreeView-Selected">
+					<a href="/portal/sl/stevci-prometa.aspx" title="Števci prometa">
+						Števci prometa</a>
+					<ul>
+						<li class="AspNet-TreeView-Leaf AspNet-TreeView-ParentSelected">
+							<a href="/portal/sl/razlaga-posameznih-stanj.aspx" title="Razlaga posameznih stanj">
+								Razlaga posameznih stanj</a>
+						</li>
+						<li class="AspNet-TreeView-Leaf AspNet-TreeView-ParentSelected">
+							<a href="/portal/sl/podatki-o-prometnih-obremenitvah.aspx" title="Zbirni podatki (arhiv)">
+								Zbirni podatki (arhiv)</a>
+						</li>
+					</ul>
+				</li>
+				<li class="AspNet-TreeView-Root AspNet-TreeView-Leaf">
+					<a href="/portal/sl/prometni-koledar.aspx" title="Prometni koledar">
+						Prometni koledar</a>
+				</li>
+				<li class="AspNet-TreeView-Root">
+					<a href="/portal/sl/merilna-mesta-sistema-burja.aspx" title="Merilna mesta sistema Burja">
+						Merilna mesta sistema Burja</a>
+				</li>
+				<li class="AspNet-TreeView-Root AspNet-TreeView-Leaf">
+					<a href="/portal/sl/moje-vsebine.aspx" title="Moje vsebine">
+						Moje vsebine</a>
+				</li>
+				<li class="AspNet-TreeView-Root AspNet-TreeView-Leaf">
+					<a href="/portal/sl/predor-karavanke.aspx" title="Predor Karavanke">
+						Predor Karavanke</a>
+				</li>
+			</ul>
+
+	</div>
+		    <a id="startcontent"></a>
+		    
+
+<div id="ctl01_leftContent_ctl00_BurjaWrapper" class="panelwrapper RMapControl boxBorderWrapper">
+		
+	<div id="ctl01_leftContent_ctl00_BurContainer" style="position:relative"></div>
+
+	</div>
+
+
+
+<div id="ctl01_leftContent_ctl01_KoledarWrapper" class="panelwrapper RMapControl boxBorderWrapper">
+		
+	<div id="ctl01_leftContent_ctl01_CalContainer" style="position:relative"></div>
+
+	</div>
+
+
+<div id="ctl01_leftContent_ctl02_VremeWrapper" class="panelwrapper RMapControl boxBorderWrapper">
+		
+	<div id="ctl01_leftContent_ctl02_VreContainer" style="position:relative"></div>
+
+	</div>
+
+
+	    
+</div>
+	    <div id="ctl01_divCenter" class="center-leftmargin">
+	
+            
+	        
+	        
+
+<div id="ctl01_mainContent_ctl00_StevciWrapper" class="panelwrapper RMapControl">
+		
+	<div id="ctl01_mainContent_ctl00_StvContainer" style="position:relative"></div>
+
+	</div>
+
+
+	    
+</div>
+	    		
+	</div>
+
+</div>
+&nbsp;
+<div id="wrapfooter">
+	<div class="wf1">
+		&copy; 2006-2015 Prometno-informacijski center za državne ceste, DARS d.d.
+	</div>
+	<div class="wf2">
+      <br class="clear" />   
+ 
+				<a href="http://www.dars.si/" target="_blank">DARS d.d. ►</a> &nbsp; | &nbsp;
+				<a href="http://www.mzp.gov.si/" target="_blank">Ministrstvo za infrastrukturo in prostor ►</a> &nbsp; | &nbsp; 
+				<a href="http://www.di.gov.si/" target="_blank">Direkcija RS za infrastrukturo ►</a> &nbsp; | &nbsp; 
+				<a href="http://www.policija.si/" target="_blank">Policija ►</a> &nbsp; | &nbsp; 
+				<a href="http://www.rtvslo.si/" target="_blank">RTV Slovenija ►</a> &nbsp; | &nbsp;
+				<a href="/portal/sl/oglasevanje.aspx">Oglaševanje ►</a> &nbsp; | &nbsp;
+				<a href="/portal/sl/kolofon.aspx">Kolofon ►</a>
+
+		<br /> &nbsp;
+	</div>
+</div>
+
+<iframe id="ieLocalStoreFrame" name="ieLocalStoreFrame" src="ieLocalStoreFrame.html" style="display:none"></iframe>
+
+</div>
+
+
+
+
+<div>
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="2010508A" />
+	<input type="hidden" name="__PREVIOUSPAGE" id="__PREVIOUSPAGE" value="KF7aZkvZkAJYHVKvhA391KYhE3W8XaTLAMwdQw-_0y7kQjQEnKl_9gO3q4UX5UzexDJGn81WPw-SUN2SpP7KyweH92j0nZ8FI7JFv0W5YWA4HHYs0" />
+	<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="/wEWAwLMlJSBBALzopmcCAK3pbmNBwcpCQSYM8bp0mXkF8LdnuhME5aW" />
+</div>
+<script type="text/javascript">Sys.Application.add_load(function() { var form = Sys.WebForms.PageRequestManager.getInstance()._form; form._initialAction = form.action = window.location.href; }); </script>
+<script type="text/javascript">BurjaInit({burCnt:'ctl01_leftContent_ctl00_BurContainer', doLinks:false, listUrl:'', lng:'', clientId:'ctl01_leftContent_ctl00'})</script>
+<script type="text/javascript">KoledarInit({calCnt:'ctl01_leftContent_ctl01_CalContainer', date:'18.11.2015', day:18, month:11, year:2015, dayto:18, monthto:12, yearto:2015, lng:'', clientId:'ctl01_leftContent_ctl01'})</script>
+<script type="text/javascript">VremeInit({vreCnt:'ctl01_leftContent_ctl02_VreContainer', lng:'', clientId:'ctl01_leftContent_ctl02'})</script>
+<script type="text/javascript">StevciIzpisInit({stvCnt:'ctl01_mainContent_ctl00_StvContainer', lng:'', cus:true, osv:false, clientId:'ctl01_mainContent_ctl00'})</script><script language='javascript' type='text/javascript'>
+<!--
+
+  var wmctl01_SearchInput1_txtSearch = document.getElementById('ctl01_SearchInput1_txtSearch'); if(wmctl01_SearchInput1_txtSearch){wmctl01_SearchInput1_txtSearch.value = 'vnesite iskalne pojme';}
+//-->
+</script><script language="javascript" type="text/javascript"> 
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+function HasGALabelCookie(labelTerm){
+var gaCookie = ' ' + document.cookie + ";";
+return gaCookie.indexOf(labelTerm);} </script>
+<script language="javascript" type="text/javascript"> 
+var mojoPageTracker = _gat._getTracker("UA-11467986-1");
+mojoPageTracker._initData();
+mojoPageTracker._trackPageview();
+ </script>
+<script type="text/javascript">$('div.yui-navset').each(function(n){var myTabs = new YAHOO.widget.TabView(this.id);})</script>
+<script type="text/javascript">
+//<![CDATA[
+Sys.Application.initialize();
+//]]>
+</script>
+</form>
+</body>
+</html>
