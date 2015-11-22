@@ -35,8 +35,9 @@ public class CounterData implements Serializable
         m_description = split[3];
       }
     }
-    m_timestamp = timestamp * 1000;
-    m_avgSecGap = 999.9f == avgSecGap ? 0 : avgSecGap;
+    m_timestamp = timestamp * 1000 + 3600000;
+    //m_avgSecGap = 999.9f == avgSecGap ? 0 : avgSecGap;
+    m_avgSecGap = avgSecGap;
     m_speed = speed;
     m_carsPerHour = carsPerHour;
     m_utilization = utilization;
@@ -102,16 +103,18 @@ public class CounterData implements Serializable
     m_utilization = utilization;
   }
 
+  public float getGpsN()
+  {
+    return m_gpsN;
+  }
+
+  public float getGpsE()
+  {
+    return m_gpsE;
+  }
+
   public double[] toDoubleArray()
   {
     return new double[]{getAvgSecGap(), getSpeed(), getCarsPerHour(), getUtilization()};
-  }
-
-  public static <R> R collectStats(Tuple2<String, Iterable<CounterData>> iterable)
-  {
-    //MultivariateStatisticalSummary statisticalSummary = Statistics.colStats(map.rdd());
-    //    double[] mean = statisticalSummary.mean().toArray();
-    //    double[] variance = statisticalSummary.variance().toArray();
-    return null;
   }
 }
