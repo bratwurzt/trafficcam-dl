@@ -43,6 +43,7 @@ public class GetCounterRunnable implements Runnable
           "INSERT INTO counter_timeline(counter_id, timestamp, avg_sec_gap, speed, cars_per_sec, utilization) VALUES (?,?,?,?,?,?);"
       );
       BoundStatement boundStatement = new BoundStatement(statement);
+      int i = 0;
       try
       {
         while (true)
@@ -67,9 +68,10 @@ public class GetCounterRunnable implements Runnable
               if (!updated.equals(m_lastUpdated))
               {
                 processJson(object, session, boundStatement);
+                LOG.info(++i + ". inserted.");
                 m_lastUpdated = updated;
               }
-              Thread.sleep(120000);
+              Thread.sleep(180000);
             }
             catch (InterruptedException e)
             {
@@ -91,7 +93,6 @@ public class GetCounterRunnable implements Runnable
     {
       e.printStackTrace();
     }
-
   }
 
   private void processJson(JsonObject object, Session session, BoundStatement statement)
@@ -112,12 +113,12 @@ public class GetCounterRunnable implements Runnable
       }
       BigDecimal timestamp = st.getJsonNumber("updated").bigDecimalValue();
       int speed = st.getInt("stevci_hit");
-      int carsPerSec = st.getInt("stevci_stev");
+      int carsPerHour = st.getInt("stevci_stev");
       float avgSecGap = Float.valueOf(st.getString("stevci_gap").replace(",", "."));
       float utilization = (float)(st.getJsonNumber("stevci_occ").doubleValue() / 10f);
       try
       {
-        session.execute(statement.bind(identity, timestamp.longValue(), avgSecGap, speed, carsPerSec, utilization));
+        session.execute(statement.bind(identity, timestamp.longValue(), avgSecGap, speed, carsPerHour, utilization));
       }
       catch (Exception e)
       {

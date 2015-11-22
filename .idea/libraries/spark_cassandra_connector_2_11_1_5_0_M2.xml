@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="spark-cassandra-connector_2.11-1.5.0-M2">
+    <CLASSES>
+      <root url="jar://E:/java/spark-cassandra-connector/spark-cassandra-connector_2.11-1.5.0-M2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://E:/java/spark-cassandra-connector/spark-cassandra-connector-java/src/it/java" />
+      <root url="file://E:/java/spark-cassandra-connector/spark-cassandra-connector-java/src/main/java" />
+      <root url="file://E:/java/spark-cassandra-connector/spark-cassandra-connector-java/src/test/java" />
+    </SOURCES>
+  </library>
+</component>
