@@ -1,11 +1,6 @@
 package si.bleedy.data;
 
 import java.io.Serializable;
-import java.util.stream.StreamSupport;
-
-import org.apache.spark.mllib.stat.MultivariateStatisticalSummary;
-import org.apache.spark.mllib.stat.Statistics;
-import scala.Tuple2;
 
 /**
  * @author bratwurzt
@@ -20,19 +15,19 @@ public class CounterData implements Serializable
   private int m_speed;
   private int m_carsPerHour;
   private float m_utilization;
-  private float m_gpsN, m_gpsE;
+  private GpsPoint m_gps;
 
   public CounterData(String compositeId, long timestamp, float avgSecGap, int speed, int carsPerHour, float utilization)
   {
     String[] split = compositeId.split("\\s+");
     if (split.length > 2)
     {
-      m_gpsN = Float.parseFloat(split[0]);
-      m_gpsE = Float.parseFloat(split[1]);
+      m_gps = new GpsPoint(Float.parseFloat(split[0]), Float.parseFloat(split[1]));
       m_id = split[2];
       if (split.length > 3)
       {
         m_description = split[3];
+        m_id += " " + m_description;
       }
     }
     m_timestamp = timestamp * 1000 + 3600000;
@@ -88,6 +83,11 @@ public class CounterData implements Serializable
     return m_carsPerHour;
   }
 
+  public int getCarsPerMin()
+  {
+    return m_carsPerHour / 60;
+  }
+
   public void setCarsPerHour(int carsPerHour)
   {
     m_carsPerHour = carsPerHour;
@@ -103,18 +103,23 @@ public class CounterData implements Serializable
     m_utilization = utilization;
   }
 
-  public float getGpsN()
+  public GpsPoint getGps()
   {
-    return m_gpsN;
-  }
-
-  public float getGpsE()
-  {
-    return m_gpsE;
+    return m_gps;
   }
 
   public double[] toDoubleArray()
   {
-    return new double[]{getAvgSecGap(), getSpeed(), getCarsPerHour(), getUtilization()};
+    return new double[]{
+        /*getAvgSecGap(),
+       */ getSpeed(),
+        /*getCarsPerHour(),
+        getUtilization()*/
+    };
+  }
+
+  public boolean isHighway()
+  {
+    return m_description != null;
   }
 }

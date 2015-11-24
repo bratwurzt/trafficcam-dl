@@ -73,9 +73,9 @@ public class GetCounterRunnable implements Runnable
               }
               Thread.sleep(180000);
             }
-            catch (InterruptedException e)
+            catch (Exception e)
             {
-              e.printStackTrace();
+              LOG.error(e);
             }
           }
           catch (IOException e)

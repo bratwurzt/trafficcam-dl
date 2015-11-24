@@ -27,8 +27,8 @@ public class TestReadCounters
   {
     try
     {
-      //URL url = new URL("http://www.promet.si/rwproxy/RWProxy.ashx?method=GET&rproxytype=json&remoteUrl=http%3A//promet/counters_si");
-      URL url = new URL("http://opendata.si/promet/counters/");
+      URL url = new URL("http://www.promet.si/rwproxy/RWProxy.ashx?method=GET&rproxytype=json&remoteUrl=http%3A//promet/counters_si");
+      //URL url = new URL("http://opendata.si/promet/counters/");
       HttpURLConnection connection = (HttpURLConnection)url.openConnection();
       connection.addRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
       connection.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.71 Safari/537.36");
@@ -41,24 +41,24 @@ public class TestReadCounters
       try (InputStream is = connection.getInputStream())
       {
         String response = readResponse(is, connection);
-        //response = response.replaceAll("^[\\s]+", response);
-        //StringBuffer b = new StringBuffer();
-        //for (int i = 0; i < response.length(); i += 2)
-        //{
-        //  b.append((char)(255 - response.charAt(i)));
-        //}
-        //if (response.length() > 0 && response.length() % 2 == 1)
-        //{
-        //  response = response.substring(0, response.length() - 1);
-        //}
-        //for (int i = response.length() - 1; i >= 0; i -= 2)
-        //{
-        //  b.append((char)(255 - response.charAt(i)));
-        //}
-        //String replaceAll = b.toString().replaceAll("(new Date\\(.*?\\))+", "\"$1\"");
-        //replaceAll = replaceAll.substring(1, replaceAll.length() - 1);
+        response = response.replaceAll("^[\\s]+", response);
+        StringBuffer b = new StringBuffer();
+        for (int i = 0; i < response.length(); i += 2)
+        {
+          b.append((char)(255 - response.charAt(i)));
+        }
+        if (response.length() > 0 && response.length() % 2 == 1)
+        {
+          response = response.substring(0, response.length() - 1);
+        }
+        for (int i = response.length() - 1; i >= 0; i -= 2)
+        {
+          b.append((char)(255 - response.charAt(i)));
+        }
+        String replaceAll = b.toString().replaceAll("(new Date\\(.*?\\))+", "\"$1\"");
+        replaceAll = replaceAll.substring(1, replaceAll.length() - 1);
         DecimalFormat decimalFormat = new DecimalFormat();
-        try (JsonReader reader = Json.createReader(new StringReader(response)))
+        try (JsonReader reader = Json.createReader(new StringReader(replaceAll)))
         {
           JsonObject object = reader.readObject();
           BigDecimal updated = ((JsonNumber)object.get("updated")).bigDecimalValue();
