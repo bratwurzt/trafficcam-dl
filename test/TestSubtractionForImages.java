@@ -16,7 +16,7 @@ import org.opencv.video.BackgroundSubtractorMOG2;
 import org.opencv.video.Video;
 
 /**
- * @author DusanM
+ * @author bratwurzt
  */
 public class TestSubtractionForImages
 {

@@ -4,12 +4,12 @@ import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import eu.fistar.sdcs.runnable.GetImageRunnable;
 import org.apache.log4j.PropertyConfigurator;
 import org.opencv.core.Core;
-import si.bleedy.runnable.GetImageRunnable;
 
 /**
- * @author DusanM
+ * @author bratwurzt
  */
 public class TestGetImage
 {

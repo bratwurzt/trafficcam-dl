@@ -19,118 +19,59 @@ import org.jfree.chart.ChartMouseListener;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.entity.XYItemEntity;
+import org.jfree.data.time.Millisecond;
 import org.jfree.data.time.Minute;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
+import scala.Tuple2;
 import si.bleedy.data.CounterData;
 import si.bleedy.data.GpsPoint;
+import si.bleedy.data.ObservationData;
 
 /**
  * @author bratwurzt
  */
-public class TestSpark extends ApplicationFrame
+public class TestSparkZephyr extends ApplicationFrame
 {
-  private static final Logger LOG = Logger.getLogger(TestSpark.class);
+  private static final Logger LOG = Logger.getLogger(TestSparkZephyr.class);
 
-  public TestSpark(String name)
+  public TestSparkZephyr(String name)
   {
     super(name);
     SparkConf conf = new SparkConf()
-        .setAppName("activityRecognition")
+        .setAppName("heart")
         .set("spark.cassandra.connection.host", "192.168.1.2")
         .set("spark.cassandra.connection.port", "9042")
         .setMaster("local");
     final JavaSparkContext sc = new JavaSparkContext(conf);
     CassandraTableScanJavaRDD<CassandraRow> cassandraRowsRDD = CassandraJavaUtil.javaFunctions(sc)
-        .cassandraTable("counterkeyspace", "counter_timeline");
-    GpsPoint ljPoint = new GpsPoint(46.05223f, 14.50567f);
-    final Map<String, Iterable<CounterData>> map = cassandraRowsRDD
-        .where("timestamp > ?", (System.currentTimeMillis() - 20* 24 * 60 * 60 * 1000) / 1000)
+        .cassandraTable("zephyrkeyspace", "observations");
+    Map<String, Iterable<ObservationData>> map = cassandraRowsRDD
+        //.where("timestamp > ?", (System.currentTimeMillis() - 20* 24 * 60 * 60 * 1000) / 1000)
         .map(CassandraRow::toMap)
-        .map(entry -> new CounterData(
-            (String)entry.get("counter_id"),
+        .map(entry -> new ObservationData(
+            (String)entry.get("name"),
+            (String)entry.get("unit"),
             (long)entry.get("timestamp"),
-            (float)entry.get("avg_sec_gap"),
-            (int)entry.get("speed"),
-            (int)entry.get("cars_per_sec"),
-            (float)entry.get("utilization")))
-        .filter(p -> ljPoint.isInRadius(p.getGps(), 10f))
-        .filter(p -> p.isHighway())
-        .groupBy(CounterData::getId)
+            (String)entry.get("value")))
+        .filter(ObservationData::filter)
+        .groupBy(ObservationData::getName)
         .collectAsMap();
     TimeSeriesCollection dataset = new TimeSeriesCollection();
-    final Map<String, List<double[]>> featureMap = new HashMap<>();
-    for (Map.Entry<String, Iterable<CounterData>> entry : map.entrySet())
+    final List<TimeSeries> timeseries = new LinkedList<>();
+    for (Map.Entry<String, Iterable<ObservationData>> entry : map.entrySet())
     {
-      final List<TimeSeries> timeseries = new LinkedList<>();
+      final TimeSeries series = new TimeSeries(entry.getKey());
       StreamSupport.stream(entry.getValue().spliterator(), false)
-          .forEach(counterData -> {
-            double[] doubles = counterData.toDoubleArray();
-            for (int i = 0; i < doubles.length; i++)
-            {
-              if (i >= timeseries.size())
-              {
-                timeseries.add(new TimeSeries(entry.getKey() + "_" + (i + 1)));
-              }
-              timeseries.get(i).add(new Minute(new Date(counterData.getTimestamp())), doubles[i]);
-            }
-          });
+          .forEach(data -> series.add(new Millisecond(new Date(data.getTimestamp())), data.getValue()));
 
-      timeseries.forEach(dataset::addSeries);
-
-      //List<Vector> collect = StreamSupport.stream(entry.getValue().spliterator(), false)
-      //    .filter(p -> ljPoint.isInRadius(p.getGps(), 5f))
-      //    .filter(p -> !p.isHighway())
-      //    .map(CounterData::toDoubleArray)
-      //    .map(Vectors::dense)
-      //    .collect(Collectors.toList());
-      //
-      //MultivariateStatisticalSummary statisticalSummary = Statistics.colStats(sc.parallelize(collect).rdd());
-      //List<double[]> stats = new ArrayList<>();
-      //stats.add(statisticalSummary.mean().toArray());
-      //stats.add(statisticalSummary.variance().toArray());
-      //stats.add(statisticalSummary.min().toArray());
-      //stats.add(statisticalSummary.max().toArray());
-      //stats.add(statisticalSummary.normL1().toArray());
-      //featureMap.put(entry.getKey(), stats);
+      timeseries.add(series);
     }
-
-    //JavaRDD<List<Integer>> transactions = cassandraRowsRDD
-    //    .where("timestamp > ?", ((System.currentTimeMillis() - 9 * 60 * 60 * 1000) / 1000))
-    //    .map(CassandraRow::toMap)
-    //    .map(entry -> new CounterData(
-    //        (String)entry.get("counter_id"),
-    //        (long)entry.get("timestamp"),
-    //        (float)entry.get("avg_sec_gap"),
-    //        (int)entry.get("speed"),
-    //        (int)entry.get("cars_per_sec"),
-    //        (float)entry.get("utilization")))
-    //    .groupBy(CounterData::getId)
-    //    .map(tuple -> {
-    //      List<Integer> returnList = new ArrayList<>();
-    //      tuple._2().forEach(entry -> returnList.add(entry.getCarsPerHour()));
-    //      return returnList;
-    //    });
-
-    //FPGrowth fpg = new FPGrowth()
-    //    .setMinSupport(0.2)
-    //    .setNumPartitions(10);
-    //FPGrowthModel<Integer> model = fpg.run(transactions);
-    //for (FPGrowth.FreqItemset<Integer> itemset : model.freqItemsets().toJavaRDD().collect())
-    //{
-    //  System.out.println("[" + itemset.javaItems() + "], " + itemset.freq());
-    //}
-    //
-    //double minConfidence = 0.8;
-    //for (AssociationRules.Rule<Integer> rule : model.generateAssociationRules(minConfidence).toJavaRDD().collect())
-    //{
-    //  System.out.println(
-    //      rule.javaAntecedent() + " => " + rule.javaConsequent() + ", " + rule.confidence());
-    //}
+    timeseries.forEach(dataset::addSeries);
 
     JFreeChart chart = ChartFactory.createTimeSeriesChart(
-        "Števci prometa", // title
+        "Zephyr", // title
         "Date", // x-axis label
         "Cars Per Hour", // y-axis label
         dataset, // data
@@ -151,7 +92,9 @@ public class TestSpark extends ApplicationFrame
         String[] split = entity.getToolTipText().split("-");
         if (split.length == 3)
         //map.entrySet().toArray()[seriesIndex];
-        System.out.println();
+        {
+          System.out.println();
+        }
       }
 
       @Override
@@ -195,7 +138,7 @@ public class TestSpark extends ApplicationFrame
 
   public static void main(String[] args)
   {
-    TestSpark demo = new TestSpark("test");
+    TestSparkZephyr demo = new TestSparkZephyr("test");
     demo.pack();
     demo.setVisible(true);
   }

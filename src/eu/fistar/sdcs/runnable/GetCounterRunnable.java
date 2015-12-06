@@ -1,4 +1,4 @@
-package si.bleedy.runnable;
+package eu.fistar.sdcs.runnable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +17,6 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
-import javax.swing.text.NumberFormatter;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Cluster;
@@ -37,7 +36,7 @@ public class GetCounterRunnable implements Runnable
   {
     try
     {
-      Cluster cluster = Cluster.builder().withPort(9042).addContactPoint("127.0.0.1").build();
+      Cluster cluster = Cluster.builder().withPort(9042).addContactPoint("192.168.1.2").build();
       Session session = cluster.connect("counterkeyspace");
       PreparedStatement statement = session.prepare(
           "INSERT INTO counter_timeline(counter_id, timestamp, avg_sec_gap, speed, cars_per_sec, utilization) VALUES (?,?,?,?,?,?);"
@@ -76,6 +75,13 @@ public class GetCounterRunnable implements Runnable
             catch (Exception e)
             {
               LOG.error(e);
+              try
+              {
+                Thread.sleep(20000);
+              }
+              catch (InterruptedException ignored)
+              {
+              }
             }
           }
           catch (IOException e)

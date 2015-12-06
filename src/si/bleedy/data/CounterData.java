@@ -10,6 +10,7 @@ public class CounterData implements Serializable
   private static final long serialVersionUID = 8901864770099180810L;
   private String m_id;
   private String m_description;
+  private String m_direction;
   private long m_timestamp;
   private float m_avgSecGap;
   private int m_speed;
@@ -24,10 +25,11 @@ public class CounterData implements Serializable
     {
       m_gps = new GpsPoint(Float.parseFloat(split[0]), Float.parseFloat(split[1]));
       m_id = split[2];
+      m_direction = m_id.split("-")[1];
       if (split.length > 3)
       {
         m_description = split[3];
-        m_id += " " + m_description;
+        m_id += "-" + m_description;
       }
     }
     m_timestamp = timestamp * 1000 + 3600000;
@@ -111,15 +113,20 @@ public class CounterData implements Serializable
   public double[] toDoubleArray()
   {
     return new double[]{
-        /*getAvgSecGap(),
-       */ getSpeed(),
-        /*getCarsPerHour(),
-        getUtilization()*/
+        //getAvgSecGap(),
+        //getSpeed()
+        getCarsPerHour()
+        //getUtilization()
     };
   }
 
   public boolean isHighway()
   {
     return m_description != null;
+  }
+
+  public boolean isDirection11()
+  {
+    return "11".equals(m_direction);
   }
 }

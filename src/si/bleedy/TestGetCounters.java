@@ -3,7 +3,7 @@ package si.bleedy;
 import java.net.URL;
 
 import org.apache.log4j.PropertyConfigurator;
-import si.bleedy.runnable.GetCounterRunnable;
+import eu.fistar.sdcs.runnable.GetCounterRunnable;
 
 /**
  * @author bratwurzt

@@ -1,25 +1,10 @@
-package si.bleedy.runnable;
+package eu.fistar.sdcs.runnable;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
-import com.datastax.spark.connector.japi.CassandraJavaUtil;
-import com.datastax.spark.connector.japi.CassandraRow;
-import com.datastax.spark.connector.japi.rdd.CassandraTableScanJavaRDD;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.mllib.linalg.Vector;
-import org.apache.spark.mllib.linalg.Vectors;
-import org.apache.spark.mllib.stat.MultivariateStatisticalSummary;
-import org.apache.spark.mllib.stat.Statistics;
+import si.bleedy.data.CounterData;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.receiver.Receiver;
-import si.bleedy.data.CounterData;
 
 /**
  * @author bratwurzt
@@ -27,12 +12,10 @@ import si.bleedy.data.CounterData;
 public class CassandraReceiver extends Receiver<Iterable<CounterData>> implements Serializable
 {
   private static final long serialVersionUID = 1840376582814772051L;
-  private JavaSparkContext m_javaSparkContext;
 
-  public CassandraReceiver(StorageLevel storageLevel, JavaSparkContext javaSparkContext)
+  public CassandraReceiver(StorageLevel storageLevel)
   {
     super(storageLevel);
-    m_javaSparkContext = javaSparkContext;
   }
 
   @Override
@@ -50,21 +33,21 @@ public class CassandraReceiver extends Receiver<Iterable<CounterData>> implement
 
   private void receive()
   {
-    CassandraTableScanJavaRDD<CassandraRow> cassandraRowsRDD = CassandraJavaUtil.javaFunctions(m_javaSparkContext)
-        .cassandraTable("counterkeyspace", "counter_timeline");
-
-    Map<String, Iterable<CounterData>> map = cassandraRowsRDD
-        //.where("timestamp > ?", ((System.currentTimeMillis() - 86400000) / 1000))
-        .map(CassandraRow::toMap)
-        .map(entry -> new CounterData(
-            (String)entry.get("counter_id"),
-            (long)entry.get("timestamp"),
-            (float)entry.get("avg_sec_gap"),
-            (int)entry.get("speed"),
-            (int)entry.get("cars_per_sec"),
-            (float)entry.get("utilization")))
-        .groupBy(CounterData::getId)
-        .collectAsMap();
+    //CassandraTableScanJavaRDD<CassandraRow> cassandraRowsRDD = CassandraJavaUtil.javaFunctions(m_javaSparkContext)
+    //    .cassandraTable("counterkeyspace", "counter_timeline");
+    //
+    //Map<String, Iterable<CounterData>> map = cassandraRowsRDD
+    //    //.where("timestamp > ?", ((System.currentTimeMillis() - 86400000) / 1000))
+    //    .map(CassandraRow::toMap)
+    //    .map(entry -> new CounterData(
+    //        (String)entry.get("counter_id"),
+    //        (long)entry.get("timestamp"),
+    //        (float)entry.get("avg_sec_gap"),
+    //        (int)entry.get("speed"),
+    //        (int)entry.get("cars_per_sec"),
+    //        (float)entry.get("utilization")))
+    //    .groupBy(CounterData::getId)
+    //    .collectAsMap();
     //store()
     //for (Map.Entry<String, Iterable<CounterData>> entry : map.entrySet())
     //{

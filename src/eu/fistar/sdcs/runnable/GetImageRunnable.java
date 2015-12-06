@@ -1,4 +1,4 @@
-package si.bleedy.runnable;
+package eu.fistar.sdcs.runnable;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -21,7 +21,7 @@ import org.opencv.core.MatOfByte;
 import org.opencv.imgcodecs.Imgcodecs;
 
 /**
- * @author DusanM
+ * @author bratwurzt
  */
 public class GetImageRunnable implements Runnable
 {
