@@ -22,6 +22,7 @@ public class ObservationData implements Serializable
     {
       m_value *= -1;
     }
+    //m_value *= 0.013405;
   }
 
   public String getName()
@@ -52,9 +53,9 @@ public class ObservationData implements Serializable
         //|| "breathing wave amplitude".equals(getName())
         //|| "heart rate".equals(getName())
         //|| "peak acceleration".equals(getName())
-        //|| "posture".equals(getName())
-        "r to r".equals(getName())
-        && getValue() < 2500
+        //"r to r".equals(getName())
+        !"ecg".equals(getName()) || getValue() < 1000
+        //&& getValue() < 1000
         ;
   }
 }

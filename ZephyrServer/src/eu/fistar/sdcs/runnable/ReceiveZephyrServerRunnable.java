@@ -32,9 +32,9 @@ public class ReceiveZephyrServerRunnable implements Runnable
   protected Session m_session;
   protected BoundStatement m_boundStatement;
 
-  public ReceiveZephyrServerRunnable()
+  public ReceiveZephyrServerRunnable(int arg)
   {
-    m_serverPort = 8099;
+    m_serverPort = arg;
   }
 
   public void run()

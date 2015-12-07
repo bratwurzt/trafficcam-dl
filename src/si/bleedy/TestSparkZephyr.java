@@ -2,6 +2,7 @@ package si.bleedy;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,8 @@ import com.datastax.spark.connector.japi.rdd.CassandraTableScanJavaRDD;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.Function;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartMouseEvent;
 import org.jfree.chart.ChartMouseListener;
@@ -48,14 +51,16 @@ public class TestSparkZephyr extends ApplicationFrame
     CassandraTableScanJavaRDD<CassandraRow> cassandraRowsRDD = CassandraJavaUtil.javaFunctions(sc)
         .cassandraTable("zephyrkeyspace", "observations");
     Map<String, Iterable<ObservationData>> map = cassandraRowsRDD
-        //.where("timestamp > ?", (System.currentTimeMillis() - 20* 24 * 60 * 60 * 1000) / 1000)
+        .where("timestamp > ?", System.currentTimeMillis() - 60 * 60 * 1000)
+        .where("name in (?,?,?,?,?,?)", "heart rate", "r to r", "EEG", "ecg", "respiration rate", "ecg amplitude")
         .map(CassandraRow::toMap)
         .map(entry -> new ObservationData(
             (String)entry.get("name"),
             (String)entry.get("unit"),
             (long)entry.get("timestamp"),
             (String)entry.get("value")))
-        .filter(ObservationData::filter)
+            .filter(ObservationData::filter)
+
         .groupBy(ObservationData::getName)
         .collectAsMap();
     TimeSeriesCollection dataset = new TimeSeriesCollection();
@@ -73,7 +78,7 @@ public class TestSparkZephyr extends ApplicationFrame
     JFreeChart chart = ChartFactory.createTimeSeriesChart(
         "Zephyr", // title
         "Date", // x-axis label
-        "Cars Per Hour", // y-axis label
+        "blabla", // y-axis label
         dataset, // data
         false, // create legend?
         true, // generate tooltips?
@@ -86,15 +91,15 @@ public class TestSparkZephyr extends ApplicationFrame
       @Override
       public void chartMouseClicked(ChartMouseEvent chartMouseEvent)
       {
-        XYItemEntity entity = (XYItemEntity)chartMouseEvent.getEntity();
-        int seriesIndex = entity.getSeriesIndex();
-        int itemIndex = entity.getItem();
-        String[] split = entity.getToolTipText().split("-");
-        if (split.length == 3)
-        //map.entrySet().toArray()[seriesIndex];
-        {
-          System.out.println();
-        }
+        //XYItemEntity entity = (XYItemEntity)chartMouseEvent.getEntity();
+        //int seriesIndex = entity.getSeriesIndex();
+        //int itemIndex = entity.getItem();
+        //String[] split = entity.getToolTipText().split("-");
+        //if (split.length == 3)
+        ////map.entrySet().toArray()[seriesIndex];
+        //{
+        //  System.out.println();
+        //}
       }
 
       @Override

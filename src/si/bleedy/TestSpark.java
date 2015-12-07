@@ -31,8 +31,6 @@ import si.bleedy.data.GpsPoint;
  */
 public class TestSpark extends ApplicationFrame
 {
-  private static final Logger LOG = Logger.getLogger(TestSpark.class);
-
   public TestSpark(String name)
   {
     super(name);
