@@ -1,23 +1,17 @@
 package eu.fistar.sdcs.runnable;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.security.KeyStore;
-import java.security.SecureRandom;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.TrustManagerFactory;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
-import eu.fistar.sdcs.TestSaveZephyr;
 
 /**
  * @author bratwurzt
@@ -25,12 +19,13 @@ import eu.fistar.sdcs.TestSaveZephyr;
 public class ReceiveZephyrServerRunnable implements Runnable
 {
   protected int m_serverPort;
-  private SSLServerSocket m_serverSocket;
+  private ServerSocket m_serverSocket;
   protected boolean m_isStopped = false;
-  protected SSLServerSocketFactory m_socketFactory;
+  protected ServerSocketFactory m_socketFactory;
   protected ExecutorService m_clientThreadPool = Executors.newSingleThreadExecutor();
   protected Session m_session;
   protected BoundStatement m_boundStatement;
+  //protected Socket m_clientSocket;
 
   public ReceiveZephyrServerRunnable(int arg)
   {
@@ -51,12 +46,12 @@ public class ReceiveZephyrServerRunnable implements Runnable
 
       while (!isStopped())
       {
-        SSLSocket clientSocket;
         try
         {
+          Socket m_clientSocket;
           try
           {
-            clientSocket = (SSLSocket)m_serverSocket.accept();
+            m_clientSocket = (Socket)m_serverSocket.accept();
           }
           catch (IOException e)
           {
@@ -66,10 +61,11 @@ public class ReceiveZephyrServerRunnable implements Runnable
             }
             throw new RuntimeException("Error accepting client connection", e);
           }
-          m_clientThreadPool.execute(new ReceiveZephyrWorkerRunnable(clientSocket, m_session, m_boundStatement));
+          m_clientThreadPool.execute(new ReceiveZephyrWorkerRunnable(m_clientSocket, m_session, m_boundStatement));
         }
         catch (Exception e)
         {
+          System.out.println();
         }
       }
     }
@@ -79,31 +75,51 @@ public class ReceiveZephyrServerRunnable implements Runnable
   {
     try
     {
-      TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
-      KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
-      InputStream keystoreStream = TestSaveZephyr.class.getClassLoader().getResourceAsStream("server.jks");
-      keystore.load(keystoreStream, "ena1dva2".toCharArray());
-      tmf.init(keystore);
-      KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX");
-      kmf.init(keystore, "ena1dva2".toCharArray());
-
-      SSLContext sc = SSLContext.getInstance("TLS");
-      sc.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
-
-      m_socketFactory = sc.getServerSocketFactory();
-      try
-      {
-        m_serverSocket = (SSLServerSocket)m_socketFactory.createServerSocket(m_serverPort);
-      }
-      catch (IOException e)
-      {
-        throw new RuntimeException("Cannot open port " + m_serverPort, e);
-      }
+      createServerSocket();
+      //createSSLServerSocket();
     }
     catch (Exception e)
     {
     }
   }
+
+  private void createServerSocket()
+  {
+    m_socketFactory = ServerSocketFactory.getDefault();
+    try
+    {
+      m_serverSocket = (ServerSocket)m_socketFactory.createServerSocket(m_serverPort);
+    }
+    catch (IOException e)
+    {
+      throw new RuntimeException("Cannot open port " + m_serverPort, e);
+    }
+  }
+
+  //private void createSSLServerSocket()
+  //    throws NoSuchAlgorithmException, KeyStoreException, IOException, CertificateException, UnrecoverableKeyException, KeyManagementException
+  //{
+  //  TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
+  //  KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
+  //  InputStream keystoreStream = TestSaveZephyr.class.getClassLoader().getResourceAsStream("server.jks");
+  //  keystore.load(keystoreStream, "ena1dva2".toCharArray());
+  //  tmf.init(keystore);
+  //  KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX");
+  //  kmf.init(keystore, "ena1dva2".toCharArray());
+  //
+  //  SSLContext sc = SSLContext.getInstance("TLS");
+  //  sc.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+  //
+  //  m_socketFactory = sc.getServerSocketFactory();
+  //  try
+  //  {
+  //    m_serverSocket = (SSLServerSocket)m_socketFactory.createServerSocket(m_serverPort);
+  //  }
+  //  catch (IOException e)
+  //  {
+  //    throw new RuntimeException("Cannot open port " + m_serverPort, e);
+  //  }
+  //}
 
   public synchronized boolean isStopped()
   {

@@ -37,8 +37,6 @@ import si.bleedy.data.ObservationData;
  */
 public class TestSparkZephyr extends ApplicationFrame
 {
-  private static final Logger LOG = Logger.getLogger(TestSparkZephyr.class);
-
   public TestSparkZephyr(String name)
   {
     super(name);
@@ -51,8 +49,8 @@ public class TestSparkZephyr extends ApplicationFrame
     CassandraTableScanJavaRDD<CassandraRow> cassandraRowsRDD = CassandraJavaUtil.javaFunctions(sc)
         .cassandraTable("zephyrkeyspace", "observations");
     Map<String, Iterable<ObservationData>> map = cassandraRowsRDD
-        .where("timestamp > ?", System.currentTimeMillis() - 60 * 60 * 1000)
-        .where("name in (?,?,?,?,?,?)", "heart rate", "r to r", "EEG", "ecg", "respiration rate", "ecg amplitude")
+        .where("timestamp > ?", System.currentTimeMillis() - 6 * 60 * 60 * 1000)
+        .where("name in (?,?,?,?,?,?)", "heart rate", "r to r", "EEG", "ecg", "CONCENTRATION", "MELLOW")
         .map(CassandraRow::toMap)
         .map(entry -> new ObservationData(
             (String)entry.get("name"),

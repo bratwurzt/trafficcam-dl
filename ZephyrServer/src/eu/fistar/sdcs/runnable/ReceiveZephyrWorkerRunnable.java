@@ -1,7 +1,7 @@
 package eu.fistar.sdcs.runnable;
 
 import java.io.IOException;
-import javax.net.ssl.SSLSocket;
+import java.net.Socket;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Session;
@@ -12,11 +12,11 @@ import eu.fistar.sdcs.pa.ZephyrProtos;
  */
 public class ReceiveZephyrWorkerRunnable implements Runnable
 {
-  protected SSLSocket m_clientSocket;
+  protected Socket m_clientSocket;
   protected Session m_session;
   protected BoundStatement m_boundStatement;
 
-  public ReceiveZephyrWorkerRunnable(SSLSocket clientSocket, Session session, BoundStatement boundStatement)
+  public ReceiveZephyrWorkerRunnable(Socket clientSocket, Session session, BoundStatement boundStatement)
   {
     m_clientSocket = clientSocket;
     m_session = session;
