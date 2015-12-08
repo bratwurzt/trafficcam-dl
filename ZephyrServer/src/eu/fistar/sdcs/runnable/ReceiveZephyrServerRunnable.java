@@ -1,8 +1,11 @@
 package eu.fistar.sdcs.runnable;
 
 import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.net.ServerSocketFactory;
@@ -25,7 +28,6 @@ public class ReceiveZephyrServerRunnable implements Runnable
   protected ExecutorService m_clientThreadPool = Executors.newSingleThreadExecutor();
   protected Session m_session;
   protected BoundStatement m_boundStatement;
-  //protected Socket m_clientSocket;
 
   public ReceiveZephyrServerRunnable(int arg)
   {
@@ -35,12 +37,13 @@ public class ReceiveZephyrServerRunnable implements Runnable
   public void run()
   {
     openServerSocket();
+
     try (Cluster cluster = Cluster.builder()
         .withPort(9042)
-        .addContactPoint("192.168.1.2")
+        .addContactPoints(InetAddress.getAllByName("cassandra.marand.si"))
         .build())
     {
-      m_session = cluster.connect("zephyrkeyspace");
+      m_session = cluster.connect("obskeyspace");
       PreparedStatement statement = m_session.prepare("INSERT INTO observations(name, unit, timestamp, value) VALUES (?,?,?,?);");
       m_boundStatement = new BoundStatement(statement);
 
@@ -51,7 +54,7 @@ public class ReceiveZephyrServerRunnable implements Runnable
           Socket m_clientSocket;
           try
           {
-            m_clientSocket = (Socket)m_serverSocket.accept();
+            m_clientSocket = m_serverSocket.accept();
           }
           catch (IOException e)
           {
@@ -69,6 +72,10 @@ public class ReceiveZephyrServerRunnable implements Runnable
         }
       }
     }
+    catch (UnknownHostException e)
+    {
+      e.printStackTrace();
+    }
   }
 
   private void openServerSocket()
@@ -76,7 +83,6 @@ public class ReceiveZephyrServerRunnable implements Runnable
     try
     {
       createServerSocket();
-      //createSSLServerSocket();
     }
     catch (Exception e)
     {
@@ -88,38 +94,13 @@ public class ReceiveZephyrServerRunnable implements Runnable
     m_socketFactory = ServerSocketFactory.getDefault();
     try
     {
-      m_serverSocket = (ServerSocket)m_socketFactory.createServerSocket(m_serverPort);
+      m_serverSocket = m_socketFactory.createServerSocket(m_serverPort);
     }
     catch (IOException e)
     {
       throw new RuntimeException("Cannot open port " + m_serverPort, e);
     }
   }
-
-  //private void createSSLServerSocket()
-  //    throws NoSuchAlgorithmException, KeyStoreException, IOException, CertificateException, UnrecoverableKeyException, KeyManagementException
-  //{
-  //  TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
-  //  KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
-  //  InputStream keystoreStream = TestSaveZephyr.class.getClassLoader().getResourceAsStream("server.jks");
-  //  keystore.load(keystoreStream, "ena1dva2".toCharArray());
-  //  tmf.init(keystore);
-  //  KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX");
-  //  kmf.init(keystore, "ena1dva2".toCharArray());
-  //
-  //  SSLContext sc = SSLContext.getInstance("TLS");
-  //  sc.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
-  //
-  //  m_socketFactory = sc.getServerSocketFactory();
-  //  try
-  //  {
-  //    m_serverSocket = (SSLServerSocket)m_socketFactory.createServerSocket(m_serverPort);
-  //  }
-  //  catch (IOException e)
-  //  {
-  //    throw new RuntimeException("Cannot open port " + m_serverPort, e);
-  //  }
-  //}
 
   public synchronized boolean isStopped()
   {

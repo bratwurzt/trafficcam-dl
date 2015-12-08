@@ -42,15 +42,15 @@ public class TestSparkZephyr extends ApplicationFrame
     super(name);
     SparkConf conf = new SparkConf()
         .setAppName("heart")
-        .set("spark.cassandra.connection.host", "192.168.1.2")
+        .set("spark.cassandra.connection.host", "cassandra")
         .set("spark.cassandra.connection.port", "9042")
         .setMaster("local");
     final JavaSparkContext sc = new JavaSparkContext(conf);
     CassandraTableScanJavaRDD<CassandraRow> cassandraRowsRDD = CassandraJavaUtil.javaFunctions(sc)
-        .cassandraTable("zephyrkeyspace", "observations");
+        .cassandraTable("obskeyspace", "observations");
     Map<String, Iterable<ObservationData>> map = cassandraRowsRDD
-        .where("timestamp > ?", System.currentTimeMillis() - 6 * 60 * 60 * 1000)
-        .where("name in (?,?,?,?,?,?)", "heart rate", "r to r", "EEG", "ecg", "CONCENTRATION", "MELLOW")
+        .where("timestamp > ?", System.currentTimeMillis() - 60 * 60 * 1000)
+        .where("name in (?,?,?)", "EEG", "CONCENTRATION", "MELLOW")
         .map(CassandraRow::toMap)
         .map(entry -> new ObservationData(
             (String)entry.get("name"),

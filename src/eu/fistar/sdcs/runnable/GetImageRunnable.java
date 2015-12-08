@@ -16,9 +16,6 @@ import java.util.Date;
 import javax.imageio.ImageIO;
 
 import org.apache.log4j.Logger;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
-import org.opencv.imgcodecs.Imgcodecs;
 
 /**
  * @author bratwurzt
@@ -168,16 +165,16 @@ public class GetImageRunnable implements Runnable
     return charset;
   }
 
-  private static Mat readInputStreamIntoMat(InputStream inputStream) throws IOException
-  {
-    // Read into byte-array
-    byte[] temporaryImageInMemory = readStream(inputStream);
-
-    // Decode into mat. Use any IMREAD_ option that describes your image appropriately
-    Mat outputImage = Imgcodecs.imdecode(new MatOfByte(temporaryImageInMemory), Imgcodecs.IMREAD_UNCHANGED);
-
-    return outputImage;
-  }
+  //private static Mat readInputStreamIntoMat(InputStream inputStream) throws IOException
+  //{
+  //  // Read into byte-array
+  //  byte[] temporaryImageInMemory = readStream(inputStream);
+  //
+  //  // Decode into mat. Use any IMREAD_ option that describes your image appropriately
+  //  Mat outputImage = Imgcodecs.imdecode(new MatOfByte(temporaryImageInMemory), Imgcodecs.IMREAD_UNCHANGED);
+  //
+  //  return outputImage;
+  //}
 
   private static byte[] readStream(InputStream stream) throws IOException
   {
