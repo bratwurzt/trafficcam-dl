@@ -42,26 +42,26 @@ public class TestSparkZephyr extends ApplicationFrame
     super(name);
     SparkConf conf = new SparkConf()
         .setAppName("heart")
-        .set("spark.cassandra.connection.host", "192.168.1.2")
+        .set("spark.cassandra.connection.host", "cassandra.marand.si")
         .set("spark.cassandra.connection.port", "9042")
-        .setMaster("local");
+        .setMaster("local[2]");
     final JavaSparkContext sc = new JavaSparkContext(conf);
     CassandraTableScanJavaRDD<CassandraRow> cassandraRowsRDD = CassandraJavaUtil.javaFunctions(sc)
-        .cassandraTable("zephyrkeyspace", "observations");
-    long startTime = System.currentTimeMillis() - 60 * 60 * 1000;
+        .cassandraTable("obskeyspace", "observations");
+    long startTime = System.currentTimeMillis() - 60 * 1000;
     long endTime = System.currentTimeMillis() - 60 * 1000;
     Map<String, Iterable<ObservationData>> map = cassandraRowsRDD
-        .where("timestamp > ?", startTime)
+//        .where("timestamp > ?", startTime)
         //.where("timestamp < ?", endTime)
-        .where("name in (?,?,?,?,?,?,?)", "ALPHA_ABSOLUTE", "BETA_ABSOLUTE", "DELTA_ABSOLUTE", "THETA_ABSOLUTE", "GAMMA_ABSOLUTE", "MELLOW", "CONCENTRATION")
-        //.where("name = ?", "ecg")
+//        .where("name in (?,?,?,?,?,?,?)", "ALPHA_ABSOLUTE", "BETA_ABSOLUTE", "DELTA_ABSOLUTE", "THETA_ABSOLUTE", "GAMMA_ABSOLUTE", "MELLOW", "CONCENTRATION")
+        .where("name = ?", "ecg")
         .map(CassandraRow::toMap)
         .map(entry -> new ObservationData(
             (String)entry.get("name"),
             (String)entry.get("unit"),
             (long)entry.get("timestamp"),
             (String)entry.get("value")))
-            //.filter(ObservationData::filter)
+//            .filter(ObservationData::filter)
 
         .groupBy(ObservationData::getGrouping)
         .collectAsMap();
