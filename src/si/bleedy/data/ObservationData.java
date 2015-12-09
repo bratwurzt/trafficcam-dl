@@ -66,6 +66,11 @@ public class ObservationData implements Serializable
         ;
   }
 
+  public Boolean filterZephyr()
+  {
+    return !"ecg".equals(getName()) || getValue() < 1000;
+  }
+
   @Override
   public String toString()
   {
