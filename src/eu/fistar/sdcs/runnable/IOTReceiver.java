@@ -28,7 +28,7 @@ import si.bleedy.data.ObservationData;
 /**
  * @author bratwurzt
  */
-public class IOTReceiver extends Receiver<Iterable<ObservationData>> implements Serializable
+public class IOTReceiver extends Receiver<ObservationData> implements Serializable
 {
   private static final long serialVersionUID = 1840376582814772051L;
   private ServerSocket m_serverSocket;
@@ -74,33 +74,49 @@ public class IOTReceiver extends Receiver<Iterable<ObservationData>> implements 
           }
           throw new RuntimeException("Error accepting client connection", e);
         }
-
-        ZephyrProtos.ObservationsPB observationsPB = ZephyrProtos.ObservationsPB.parseFrom(m_clientSocket.getInputStream());
-        List<ObservationData> list = new ArrayList<>();
-        for (ZephyrProtos.ObservationPB entry : observationsPB.getObservationsList())
+        new Thread()
         {
-          if (entry.getDuration() == 0)
+          @Override
+          public void run()
           {
-            list.add(new ObservationData(entry.getName(), entry.getUnit(), entry.getTime(), entry.getValues(0)));
-          }
-          else
-          {
-            int oneStepDur = entry.getDuration() / entry.getValuesCount();
-            for (int i = 0; i < entry.getValuesCount(); i++)
+            try
             {
-              String value = entry.getValues(i);
-              long timestamp = entry.getTime() + i * oneStepDur;
-              list.add(new ObservationData(entry.getName(), entry.getUnit(), timestamp, value));
+              parseAndStoreObservations(m_clientSocket);
+            }
+            catch (IOException e)
+            {
+              restart(e.getMessage());
             }
           }
-          store(list);
-          //restart("Connecting again");
-        }
+        }.start();
       }
     }
     catch (Exception e)
     {
       restart(e.getMessage());
+    }
+  }
+
+  private void parseAndStoreObservations(Socket m_clientSocket) throws IOException
+  {
+    ZephyrProtos.ObservationsPB observationsPB = ZephyrProtos.ObservationsPB.parseFrom(m_clientSocket.getInputStream());
+    for (ZephyrProtos.ObservationPB entry : observationsPB.getObservationsList())
+    {
+      if (entry.getDuration() == 0)
+      {
+        store(new ObservationData(entry.getName(), entry.getUnit(), entry.getTime(), entry.getValues(0)));
+      }
+      else
+      {
+        int oneStepDur = entry.getDuration() / entry.getValuesCount();
+        for (int i = 0; i < entry.getValuesCount(); i++)
+        {
+          String value = entry.getValues(i);
+          long timestamp = entry.getTime() + i * oneStepDur;
+          store(new ObservationData(entry.getName(), entry.getUnit(), timestamp, value));
+        }
+      }
+      //restart("Connecting again");
     }
   }
 
@@ -112,15 +128,15 @@ public class IOTReceiver extends Receiver<Iterable<ObservationData>> implements 
   @Override
   public void onStop()
   {
-    m_isStopped = true;
-    try
-    {
-      m_serverSocket.close();
-    }
-    catch (IOException e)
-    {
-      throw new RuntimeException("Error closing server", e);
-    }
+//    m_isStopped = true;
+//    try
+//    {
+//      m_serverSocket.close();
+//    }
+//    catch (IOException e)
+//    {
+//      throw new RuntimeException("Error closing server", e);
+//    }
   }
 
   private void createServerSocket()
