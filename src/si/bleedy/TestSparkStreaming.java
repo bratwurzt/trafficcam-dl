@@ -1,29 +1,15 @@
 package si.bleedy;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.StreamSupport;
-
-import com.datastax.spark.connector.japi.CassandraJavaUtil;
-import com.datastax.spark.connector.japi.CassandraRow;
-import com.datastax.spark.connector.japi.rdd.CassandraTableScanJavaRDD;
-import org.apache.spark.api.java.function.Function;
-import si.bleedy.data.CounterData;
-import si.bleedy.data.GpsPoint;
-import eu.fistar.sdcs.runnable.CassandraReceiver;
+import com.datastax.spark.connector.japi.CassandraStreamingJavaUtil;
+import eu.fistar.sdcs.runnable.IOTReceiver;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.jfree.data.time.Minute;
-import org.jfree.data.time.TimeSeries;
-import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
 import si.bleedy.data.ObservationData;
 
@@ -47,17 +33,12 @@ public class TestSparkStreaming extends ApplicationFrame
     JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.seconds(2));
 
     JavaReceiverInputDStream<Iterable<ObservationData>> cr = ssc.receiverStream(
-        new CassandraReceiver(StorageLevel.MEMORY_ONLY(), ssc.sparkContext())
+        new IOTReceiver(StorageLevel.MEMORY_ONLY(), 8100)
     );
-    //cr.map(new Function<Iterable<ObservationData>, Iterable<ObservationData>>()
-    //{
-    //  @Override
-    //  public Iterable<ObservationData> call(Iterable<ObservationData> v1) throws Exception
-    //  {
-    //    return null;
-    //  }
-    //}).print();
-    cr.print();
+    CassandraStreamingJavaUtil.javaFunctions(ssc)
+        .cassandraTable("zephyrkeyspace", "observations");
+    ;
+
     ssc.start();
     ssc.awaitTermination();
   }

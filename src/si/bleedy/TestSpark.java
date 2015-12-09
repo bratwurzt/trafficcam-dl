@@ -183,7 +183,7 @@ public class TestSpark extends ApplicationFrame
     // streaming
     //JavaStreamingContext ssc = new JavaStreamingContext(sc, Durations.minutes(30));
     //JavaReceiverInputDStream<Iterable<CounterData>> cr = ssc.receiverStream(
-    //    new CassandraReceiver(StorageLevel.MEMORY_ONLY(), ssc.sparkContext())
+    //    new IOTReceiver(StorageLevel.MEMORY_ONLY(), ssc.sparkContext())
     //);
     //cr.print();
     //ssc.start();

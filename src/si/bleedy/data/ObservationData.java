@@ -22,12 +22,21 @@ public class ObservationData implements Serializable
     {
       m_value *= -1;
     }
+    else if (m_value < 1.0)
+    {
+      m_value *= 1000;
+    }
     //m_value *= 0.013405;
   }
 
   public String getName()
   {
     return m_name;
+  }
+
+  public String getGrouping()
+  {
+    return m_name + "_" + m_unit;
   }
 
   public String getUnit()

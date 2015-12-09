@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 
 import com.csvreader.CsvReader;
 import com.datastax.driver.core.BoundStatement;
@@ -44,9 +45,16 @@ public class SaveCsvRunnable implements Runnable
       CsvReader reader = new CsvReader(new InputStreamReader(resourceAsStream));
       reader.setDelimiter(',');
       List<SleepData> list = new ArrayList<>();
+      Pattern p = Pattern.compile(".*\\d+.*");
       try
       {
         reader.readHeaders();
+        String[] headers = reader.getHeaders();
+        int hourIndex = 0;
+        for (int i = 0; i < headers.length; i++)
+        {
+
+        }
         while (reader.readRecord())
         {
           //new SleepData(

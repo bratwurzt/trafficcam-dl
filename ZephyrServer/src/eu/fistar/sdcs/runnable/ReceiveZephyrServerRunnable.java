@@ -1,15 +1,12 @@
 package eu.fistar.sdcs.runnable;
 
 import java.io.IOException;
-import java.net.Inet6Address;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.net.ServerSocketFactory;
-import javax.net.ssl.SSLSocket;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Cluster;
@@ -40,10 +37,10 @@ public class ReceiveZephyrServerRunnable implements Runnable
 
     try (Cluster cluster = Cluster.builder()
         .withPort(9042)
-        .addContactPoints(InetAddress.getAllByName("cassandra.marand.si"))
+        .addContactPoint("192.168.1.2")
         .build())
     {
-      m_session = cluster.connect("obskeyspace");
+      m_session = cluster.connect("zephyrkeyspace");
       PreparedStatement statement = m_session.prepare("INSERT INTO observations(name, unit, timestamp, value) VALUES (?,?,?,?);");
       m_boundStatement = new BoundStatement(statement);
 
@@ -64,17 +61,13 @@ public class ReceiveZephyrServerRunnable implements Runnable
             }
             throw new RuntimeException("Error accepting client connection", e);
           }
-          m_clientThreadPool.execute(new ReceiveZephyrWorkerRunnable(m_clientSocket, m_session, m_boundStatement));
+          m_clientThreadPool.execute(new SaveZephyrWorkerRunnable(m_clientSocket, m_session, m_boundStatement));
         }
         catch (Exception e)
         {
           System.out.println();
         }
       }
-    }
-    catch (UnknownHostException e)
-    {
-      e.printStackTrace();
     }
   }
 
@@ -95,6 +88,8 @@ public class ReceiveZephyrServerRunnable implements Runnable
     try
     {
       m_serverSocket = m_socketFactory.createServerSocket(m_serverPort);
+      m_serverSocket.setReuseAddress(true);
+      m_serverSocket.bind(new InetSocketAddress(m_serverPort));
     }
     catch (IOException e)
     {

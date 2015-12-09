@@ -10,13 +10,13 @@ import eu.fistar.sdcs.pa.ZephyrProtos;
 /**
  * @author bratwurzt
  */
-public class ReceiveZephyrWorkerRunnable implements Runnable
+public class SaveZephyrWorkerRunnable implements Runnable
 {
   protected Socket m_clientSocket;
   protected Session m_session;
   protected BoundStatement m_boundStatement;
 
-  public ReceiveZephyrWorkerRunnable(Socket clientSocket, Session session, BoundStatement boundStatement)
+  public SaveZephyrWorkerRunnable(Socket clientSocket, Session session, BoundStatement boundStatement)
   {
     m_clientSocket = clientSocket;
     m_session = session;

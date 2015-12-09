@@ -42,24 +42,28 @@ public class TestSparkZephyr extends ApplicationFrame
     super(name);
     SparkConf conf = new SparkConf()
         .setAppName("heart")
-        .set("spark.cassandra.connection.host", "cassandra")
+        .set("spark.cassandra.connection.host", "192.168.1.2")
         .set("spark.cassandra.connection.port", "9042")
         .setMaster("local");
     final JavaSparkContext sc = new JavaSparkContext(conf);
     CassandraTableScanJavaRDD<CassandraRow> cassandraRowsRDD = CassandraJavaUtil.javaFunctions(sc)
-        .cassandraTable("obskeyspace", "observations");
+        .cassandraTable("zephyrkeyspace", "observations");
+    long startTime = System.currentTimeMillis() - 60 * 60 * 1000;
+    long endTime = System.currentTimeMillis() - 60 * 1000;
     Map<String, Iterable<ObservationData>> map = cassandraRowsRDD
-        .where("timestamp > ?", System.currentTimeMillis() - 60 * 60 * 1000)
-        .where("name in (?,?,?)", "EEG", "CONCENTRATION", "MELLOW")
+        .where("timestamp > ?", startTime)
+        //.where("timestamp < ?", endTime)
+        .where("name in (?,?,?,?,?,?,?)", "ALPHA_ABSOLUTE", "BETA_ABSOLUTE", "DELTA_ABSOLUTE", "THETA_ABSOLUTE", "GAMMA_ABSOLUTE", "MELLOW", "CONCENTRATION")
+        //.where("name = ?", "ecg")
         .map(CassandraRow::toMap)
         .map(entry -> new ObservationData(
             (String)entry.get("name"),
             (String)entry.get("unit"),
             (long)entry.get("timestamp"),
             (String)entry.get("value")))
-            .filter(ObservationData::filter)
+            //.filter(ObservationData::filter)
 
-        .groupBy(ObservationData::getName)
+        .groupBy(ObservationData::getGrouping)
         .collectAsMap();
     TimeSeriesCollection dataset = new TimeSeriesCollection();
     final List<TimeSeries> timeseries = new LinkedList<>();
@@ -131,7 +135,7 @@ public class TestSparkZephyr extends ApplicationFrame
     // streaming
     //JavaStreamingContext ssc = new JavaStreamingContext(sc, Durations.minutes(30));
     //JavaReceiverInputDStream<Iterable<CounterData>> cr = ssc.receiverStream(
-    //    new CassandraReceiver(StorageLevel.MEMORY_ONLY(), ssc.sparkContext())
+    //    new IOTReceiver(StorageLevel.MEMORY_ONLY(), ssc.sparkContext())
     //);
     //cr.print();
     //ssc.start();
