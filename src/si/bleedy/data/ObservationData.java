@@ -27,6 +27,14 @@ public class ObservationData implements Serializable
     //m_value *= 0.013405;
   }
 
+  public ObservationData(String name, String unit, Long timestamp, double value)
+  {
+    m_name = name;
+    m_unit = unit;
+    m_timestamp = timestamp;
+    m_value = value;
+  }
+
   public String getName()
   {
     return m_name;

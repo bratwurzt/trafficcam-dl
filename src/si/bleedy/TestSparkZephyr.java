@@ -48,12 +48,12 @@ public class TestSparkZephyr extends ApplicationFrame
     final JavaSparkContext sc = new JavaSparkContext(conf);
     CassandraTableScanJavaRDD<CassandraRow> cassandraRowsRDD = CassandraJavaUtil.javaFunctions(sc)
         .cassandraTable("obskeyspace", "observations");
-    long startTime = System.currentTimeMillis() - 60 * 1000;
+    long startTime = System.currentTimeMillis() - 5 * 60 * 1000;
     long endTime = System.currentTimeMillis() - 60 * 1000;
     Map<String, Iterable<ObservationData>> map = cassandraRowsRDD
-//        .where("timestamp > ?", startTime)
+        .where("timestamp > ?", startTime)
         //.where("timestamp < ?", endTime)
-        .where("name in (?,?,?,?,?,?)", "AROUSAL_EMIL", "AROUSAL_GIRALDO_RAMIREZ", "VALENCE_EMIL", "VALENCE_GIRALDO_RAMIREZ", "MELLOW", "CONCENTRATION")
+        .where("name in (?,?)", "AROUSAL_EMIL", "AROUSAL_GIRALDO_RAMIREZ"/*, "VALENCE_EMIL", "VALENCE_GIRALDO_RAMIREZ"*/)
 //        .where("name = ?", "ecg")
         .map(CassandraRow::toMap)
         .map(entry -> new ObservationData(

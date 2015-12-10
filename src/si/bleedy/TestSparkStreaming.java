@@ -7,8 +7,10 @@ import java.util.List;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Durations;
+import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import com.datastax.spark.connector.japi.CassandraJavaUtil;
@@ -65,86 +67,201 @@ public class TestSparkStreaming implements Serializable
         new IOTReceiver(StorageLevel.MEMORY_ONLY(), 8100)
     );
 
-    // compute FP arousal and valence
+    // compute Muse FP arousal and valence
     JavaDStream<ObservationData> eegFPAlphaBetaStream = museStream
         .filter(e -> ("ALPHA_ABSOLUTE".equals(e.getName()) || "BETA_ABSOLUTE".equals(e.getName()))
-            && ("FP1".equals(e.getUnit()) || "FP2".equals(e.getUnit())))
-        ;
+            && ("FP1".equals(e.getUnit()) || "FP2".equals(e.getUnit())));
+
     JavaDStream<ObservationData> eegArousalAndValenceStream = eegFPAlphaBetaStream
         .transform(new Function<JavaRDD<ObservationData>, JavaRDD<ObservationData>>()
-    {
-      private static final long serialVersionUID = -6490438026689680564L;
-
-      @Override
-      public JavaRDD<ObservationData> call(JavaRDD<ObservationData> rdd) throws Exception
-      {
-        if (rdd.count() > 0)
         {
-          return rdd.groupBy(observationData -> observationData.getTimestamp() / 2)
-              .flatMapValues((Function<Iterable<ObservationData>, Iterable<ObservationData>>)this::computeArousalAndValence)
-              .values();
-        }
-        return null;
-      }
+          private static final long serialVersionUID = -6490438026689680564L;
 
-      private Iterable<ObservationData> computeArousalAndValence(Iterable<ObservationData> o)
-      {
-        List<ObservationData> returnList = new ArrayList<>();
-        if (Iterables.size(o) == 4)
-        {
-          double[] fp1fp2AlphaBeta = new double[4]; // fp1-A, fp2-A, fp1-B, fp2-B
-          Long avgTimestamp = null;
-          for (ObservationData obs : o)
+          @Override
+          public JavaRDD<ObservationData> call(JavaRDD<ObservationData> rdd) throws Exception
           {
-            avgTimestamp = avgTimestamp == null ? obs.getTimestamp() : avgTimestamp + obs.getTimestamp();
-            fp1fp2AlphaBeta[getIndex(obs.getGrouping())] = obs.getValue();
+            if (rdd.count() > 0)
+            {
+              return rdd.groupBy(observationData -> observationData.getTimestamp() / 2)
+                  .flatMapValues((Function<Iterable<ObservationData>, Iterable<ObservationData>>)this::computeArousalAndValence)
+                  .values();
+            }
+            return null;
           }
-          avgTimestamp /= 4;
 
-          // arousal
-          double arousalEmil = ((fp1fp2AlphaBeta[0] - fp1fp2AlphaBeta[2]) + (fp1fp2AlphaBeta[1] - fp1fp2AlphaBeta[3])) / 2;
-          returnList.add(new ObservationData(
-              "AROUSAL_EMIL",
-              "",
-              avgTimestamp,
-              String.valueOf(arousalEmil)
-          ));
+          private Iterable<ObservationData> computeArousalAndValence(Iterable<ObservationData> o)
+          {
+            List<ObservationData> returnList = new ArrayList<>();
+            if (Iterables.size(o) == 4)
+            {
+              double[] fp1fp2AlphaBeta = new double[4]; // fp1-A, fp2-A, fp1-B, fp2-B
+              Long avgTimestamp = null;
+              for (ObservationData obs : o)
+              {
+                avgTimestamp = avgTimestamp == null ? obs.getTimestamp() : avgTimestamp + obs.getTimestamp();
+                fp1fp2AlphaBeta[getIndex(obs.getGrouping())] = obs.getValue();
+              }
+              avgTimestamp /= 4;
 
-          // Sergio Giraldo, Rafael Ramirez:2013:Brain-Activity-Driven Real-Time Music Emotive Control:4
-          double arousal = (fp1fp2AlphaBeta[2] + fp1fp2AlphaBeta[3]) / (fp1fp2AlphaBeta[0] + fp1fp2AlphaBeta[1]);
-          returnList.add(new ObservationData(
-              "AROUSAL_GIRALDO_RAMIREZ",
-              "",
-              avgTimestamp,
-              String.valueOf(arousal)
-          ));
+              // arousal
+              double arousalEmil = ((fp1fp2AlphaBeta[0] - fp1fp2AlphaBeta[2]) + (fp1fp2AlphaBeta[1] - fp1fp2AlphaBeta[3])) / 2;
+              returnList.add(new ObservationData(
+                  "AROUSAL_EMIL",
+                  "",
+                  avgTimestamp,
+                  String.valueOf(arousalEmil)
+              ));
 
-          // valence
-          // Kenneth Hugdahl, Richard J. Davidson:2003:The asymmetrical brain:568
-          double valenceEmil = fp1fp2AlphaBeta[1] - fp1fp2AlphaBeta[0];
-          returnList.add(new ObservationData(
-              "VALENCE_EMIL",
-              "",
-              avgTimestamp,
-              String.valueOf(arousal)
-          ));
-          // Sergio Giraldo, Rafael Ramirez:2013:Brain-Activity-Driven Real-Time Music Emotive Control:4
-          double valence = fp1fp2AlphaBeta[1] / fp1fp2AlphaBeta[3] - fp1fp2AlphaBeta[0] / fp1fp2AlphaBeta[2];
-          returnList.add(new ObservationData(
-              "VALENCE_GIRALDO_RAMIREZ",
-              "",
-              avgTimestamp,
-              String.valueOf(arousal)
-          ));
-        }
-        return returnList;
-      }
-    });
+              // Sergio Giraldo, Rafael Ramirez:2013:Brain-Activity-Driven Real-Time Music Emotive Control:4
+              double arousal = (fp1fp2AlphaBeta[2] + fp1fp2AlphaBeta[3]) / (fp1fp2AlphaBeta[0] + fp1fp2AlphaBeta[1]);
+              returnList.add(new ObservationData(
+                  "AROUSAL_GIRALDO_RAMIREZ",
+                  "",
+                  avgTimestamp,
+                  String.valueOf(arousal)
+              ));
 
+              // valence
+              // Kenneth Hugdahl, Richard J. Davidson:2003:The asymmetrical brain:568
+              double valenceEmil = fp1fp2AlphaBeta[1] - fp1fp2AlphaBeta[0];
+              returnList.add(new ObservationData(
+                  "VALENCE_EMIL",
+                  "",
+                  avgTimestamp,
+                  String.valueOf(valenceEmil)
+              ));
+              // Sergio Giraldo, Rafael Ramirez:2013:Brain-Activity-Driven Real-Time Music Emotive Control:4
+              double valence = fp1fp2AlphaBeta[1] / fp1fp2AlphaBeta[3] - fp1fp2AlphaBeta[0] / fp1fp2AlphaBeta[2];
+              returnList.add(new ObservationData(
+                  "VALENCE_GIRALDO_RAMIREZ",
+                  "",
+                  avgTimestamp,
+                  String.valueOf(valence)
+              ));
+            }
+            return returnList;
+          }
+        })
+        .window(Durations.seconds(5), Durations.seconds(1))
+        .transform(new Function2<JavaRDD<ObservationData>, Time, JavaRDD<ObservationData>>()  // mean over last 5 seconds
+        {
+          private static final long serialVersionUID = 5455964470681463716L;
+
+          @Override
+          public JavaRDD<ObservationData> call(JavaRDD<ObservationData> rdd, Time time) throws Exception
+          {
+            if (rdd.count() > 0)
+            {
+              return rdd.sortBy((Function<ObservationData, Long>)ObservationData::getTimestamp, false, 2)
+                  .groupBy(ObservationData::getName)
+                  .mapValues(new Function<Iterable<ObservationData>, ObservationData>()
+                  {
+                    @Override
+                    public ObservationData call(Iterable<ObservationData> o) throws Exception
+                    {
+                      if (o != null)
+                      {
+                        int size = Iterables.size(o);
+                        if (size > 0)
+                        {
+                          double avgValue = 0;
+                          String name1 = null;
+                          Long maxTimestamp = 0L;
+                          for (ObservationData d : o)
+                          {
+                            avgValue += d.getValue();
+                            if (name1 == null)
+                            {
+                              name1 = d.getName();
+                            }
+                            if (d.getTimestamp() > maxTimestamp)
+                            {
+                              maxTimestamp = d.getTimestamp();
+                            }
+                          }
+                          avgValue /= size;
+                          return new ObservationData(
+                              name1,
+                              "",
+                              maxTimestamp,
+                              avgValue
+                          );
+                        }
+                      }
+                      return null;
+                    }
+                  })
+                  .values()
+                  ;
+            }
+
+            return rdd;
+          }
+        })
+        .window(Durations.seconds(20), Durations.seconds(1))
+        .transform(new Function2<JavaRDD<ObservationData>, Time, JavaRDD<ObservationData>>()  // normalization over last 20 seconds
+        {
+          private static final long serialVersionUID = 5455964470681463716L;
+
+          @Override
+          public JavaRDD<ObservationData> call(JavaRDD<ObservationData> rdd, Time time) throws Exception
+          {
+            if (rdd.count() > 0)
+            {
+              return rdd.sortBy((Function<ObservationData, Long>)ObservationData::getTimestamp, false, 2)
+                  .groupBy(ObservationData::getName)
+                  .mapValues((Function<Iterable<ObservationData>, ObservationData>)o -> {
+                    int size = Iterables.size(o);
+                    if (size > 0)
+                    {
+                      double max = 0, min = Double.MAX_VALUE;
+                      String name1 = null;
+                      Long maxTimestamp = 0L;
+                      double lastValue = 0;
+                      for (ObservationData d : o)
+                      {
+                        if (d.getValue() > max)
+                        {
+                          max = d.getValue();
+                        }
+                        if (d.getValue() < min)
+                        {
+                          min = d.getValue();
+                        }
+                        if (name1 == null)
+                        {
+                          name1 = d.getName();
+                        }
+                        if (d.getTimestamp() > maxTimestamp)
+                        {
+                          maxTimestamp = d.getTimestamp();
+                          lastValue = d.getValue();
+                        }
+                      }
+                      return new ObservationData(
+                          name1,
+                          "",
+                          maxTimestamp,
+                          (lastValue - min) / (max - min)
+                      );
+                    }
+                    return null;
+                  })
+                  .values();
+            }
+            return null;
+          }
+        })
+        ;
+
+    // filter Zephyr ecg
     JavaDStream<ObservationData> filteredZephyrStream = zephyrStream
         .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr);
 
-    JavaDStream<ObservationData> union = filteredZephyrStream.union(museStream).union(eegArousalAndValenceStream);
+    // Onion of everything!
+    JavaDStream<ObservationData> union = filteredZephyrStream
+        .union(museStream)
+        .union(eegArousalAndValenceStream);
     CassandraStreamingJavaUtil.javaFunctions(union)
         .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
         .saveToCassandra();
