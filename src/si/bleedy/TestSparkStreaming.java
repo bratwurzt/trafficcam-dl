@@ -1,9 +1,12 @@
 package si.bleedy;
 
 import java.io.Serializable;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
@@ -26,6 +29,13 @@ import si.bleedy.data.ObservationData;
 public class TestSparkStreaming implements Serializable
 {
   private static final long serialVersionUID = -4289949126909167376L;
+
+  static
+  {
+    URL url = Thread.currentThread().getContextClassLoader().getResource("config/log4j.properties");
+    PropertyConfigurator.configure(url);
+  }
+
 //  private final DynamicTimeSeriesCollection dataset;
 //  private final JFreeChart chart;
 
@@ -154,42 +164,37 @@ public class TestSparkStreaming implements Serializable
             {
               return rdd.sortBy((Function<ObservationData, Long>)ObservationData::getTimestamp, false, 2)
                   .groupBy(ObservationData::getName)
-                  .mapValues(new Function<Iterable<ObservationData>, ObservationData>()
-                  {
-                    @Override
-                    public ObservationData call(Iterable<ObservationData> o) throws Exception
+                  .mapValues((Function<Iterable<ObservationData>, ObservationData>)o -> {
+                    if (o != null)
                     {
-                      if (o != null)
+                      int size = Iterables.size(o);
+                      if (size > 0)
                       {
-                        int size = Iterables.size(o);
-                        if (size > 0)
+                        double avgValue = 0;
+                        String name1 = null;
+                        Long maxTimestamp = 0L;
+                        for (ObservationData d : o)
                         {
-                          double avgValue = 0;
-                          String name1 = null;
-                          Long maxTimestamp = 0L;
-                          for (ObservationData d : o)
+                          avgValue += d.getValue();
+                          if (name1 == null)
                           {
-                            avgValue += d.getValue();
-                            if (name1 == null)
-                            {
-                              name1 = d.getName();
-                            }
-                            if (d.getTimestamp() > maxTimestamp)
-                            {
-                              maxTimestamp = d.getTimestamp();
-                            }
+                            name1 = d.getName();
                           }
-                          avgValue /= size;
-                          return new ObservationData(
-                              name1,
-                              "",
-                              maxTimestamp,
-                              avgValue
-                          );
+                          if (d.getTimestamp() > maxTimestamp)
+                          {
+                            maxTimestamp = d.getTimestamp();
+                          }
                         }
+                        avgValue /= size;
+                        return new ObservationData(
+                            name1,
+                            "",
+                            maxTimestamp,
+                            avgValue
+                        );
                       }
-                      return null;
                     }
+                    return null;
                   })
                   .values()
                   ;
@@ -251,12 +256,24 @@ public class TestSparkStreaming implements Serializable
             }
             return null;
           }
-        })
-        ;
+        });
 
     // filter Zephyr ecg
     JavaDStream<ObservationData> filteredZephyrStream = zephyrStream
         .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr);
+
+    zephyrStream.filter(e -> "ecg".equals(e.getName()))
+        .foreachRDD((Function2<JavaRDD<ObservationData>, Time, Void>)(rdd, time) -> {
+          if (rdd.count() > 0)
+          {
+            long count = rdd.count();
+            // Calculate statistics based on the content size.
+            long usable = rdd.filter(e -> e.getValue() < 1000).count();
+            long unusable = count - usable;
+            System.out.println(String.format("Number of ecg samples in 1 second: All: %s Usable: %s, Unusable: %s", count, usable, unusable));
+          }
+          return null;
+        });
 
     // Onion of everything!
     JavaDStream<ObservationData> union = filteredZephyrStream
