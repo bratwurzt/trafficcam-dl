@@ -53,8 +53,8 @@ public class TestSparkZephyr extends ApplicationFrame
     Map<String, Iterable<ObservationData>> map = cassandraRowsRDD
 //        .where("timestamp > ?", startTime)
         //.where("timestamp < ?", endTime)
-//        .where("name in (?,?,?,?,?,?,?)", "ALPHA_ABSOLUTE", "BETA_ABSOLUTE", "DELTA_ABSOLUTE", "THETA_ABSOLUTE", "GAMMA_ABSOLUTE", "MELLOW", "CONCENTRATION")
-        .where("name = ?", "ecg")
+        .where("name in (?,?,?,?,?,?)", "AROUSAL_EMIL", "AROUSAL_GIRALDO_RAMIREZ", "VALENCE_EMIL", "VALENCE_GIRALDO_RAMIREZ", "MELLOW", "CONCENTRATION")
+//        .where("name = ?", "ecg")
         .map(CassandraRow::toMap)
         .map(entry -> new ObservationData(
             (String)entry.get("name"),

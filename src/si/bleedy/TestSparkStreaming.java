@@ -1,75 +1,53 @@
 package si.bleedy;
 
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.time.Duration;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
-
-import javax.swing.JFrame;
-import javax.swing.JPanel;
 
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Durations;
-import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.DateAxis;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.data.time.DynamicTimeSeriesCollection;
-import org.jfree.data.time.Millisecond;
-import org.jfree.data.time.Second;
-
 import com.datastax.spark.connector.japi.CassandraJavaUtil;
 import com.datastax.spark.connector.japi.CassandraStreamingJavaUtil;
+import com.google.common.collect.Iterables;
 
 import eu.fistar.sdcs.runnable.IOTReceiver;
-import scala.Tuple2;
 import si.bleedy.data.ObservationData;
 
 /**
  * @author bratwurzt
  */
-public class TestSparkStreaming extends JPanel
+public class TestSparkStreaming implements Serializable
 {
-  private final DynamicTimeSeriesCollection dataset;
-  private final JFreeChart chart;
+  private static final long serialVersionUID = -4289949126909167376L;
+//  private final DynamicTimeSeriesCollection dataset;
+//  private final JFreeChart chart;
 
   public TestSparkStreaming(String name)
   {
-    dataset = new DynamicTimeSeriesCollection(4, 60, new Second());
-    dataset.setTimeBase(new Second(new Date()));
-    dataset.addSeries(new float[1], 0, "FP1_ALPHA");
-    dataset.addSeries(new float[1], 1, "FP2_ALPHA");
-    dataset.addSeries(new float[1], 2, "FP1_BETA");
-    dataset.addSeries(new float[1], 3, "FP2_BETA");
-    chart = ChartFactory.createTimeSeriesChart(name, "Time", name, dataset, true, true, false);
-    XYPlot plot = chart.getXYPlot();
-    DateAxis axis = (DateAxis)plot.getDomainAxis();
-    axis.setFixedAutoRange(10000);
-    axis.setDateFormatOverride(new SimpleDateFormat("ss.SS"));
-    final ChartPanel chartPanel = new ChartPanel(chart);
-    add(chartPanel);
-
-    JFrame frame = new JFrame("testing");
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.add(this);
-    frame.pack();
-    frame.setVisible(true);
+//    dataset = new DynamicTimeSeriesCollection(4, 60, new Second());
+//    dataset.setTimeBase(new Second(new Date()));
+//    dataset.addSeries(new float[1], 0, "FP1_ALPHA");
+//    dataset.addSeries(new float[1], 1, "FP2_ALPHA");
+//    dataset.addSeries(new float[1], 2, "FP1_BETA");
+//    dataset.addSeries(new float[1], 3, "FP2_BETA");
+//    chart = ChartFactory.createTimeSeriesChart(name, "Time", name, dataset, true, true, false);
+//    XYPlot plot = chart.getXYPlot();
+//    DateAxis axis = (DateAxis)plot.getDomainAxis();
+//    axis.setFixedAutoRange(10000);
+//    axis.setDateFormatOverride(new SimpleDateFormat("ss.SS"));
+//    final ChartPanel chartPanel = new ChartPanel(chart);
+//    add(chartPanel);
+//
+//    JFrame frame = new JFrame("testing");
+//    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//    frame.add(this);
+//    frame.pack();
+//    frame.setVisible(true);
 
     SparkConf conf = new SparkConf()
         .setAppName("heart")
@@ -88,54 +66,88 @@ public class TestSparkStreaming extends JPanel
     );
 
     // compute FP arousal and valence
-    JavaDStream<ObservationData> eegStream = museStream
+    JavaDStream<ObservationData> eegFPAlphaBetaStream = museStream
         .filter(e -> ("ALPHA_ABSOLUTE".equals(e.getName()) || "BETA_ABSOLUTE".equals(e.getName()))
             && ("FP1".equals(e.getUnit()) || "FP2".equals(e.getUnit())))
-        //.reduceByWindow(new Function2<ObservationData, ObservationData, ObservationData>()
-        //{
-        //  @Override
-        //  public ObservationData call(ObservationData observationData, ObservationData observationData2) throws Exception
-        //  {
-        //    return observationData;
-        //  }
-        //}, Durations.milliseconds(5), Durations.milliseconds(4))
         ;
-    eegStream.foreachRDD(new Function<JavaRDD<ObservationData>, Void>()
+    JavaDStream<ObservationData> eegArousalAndValenceStream = eegFPAlphaBetaStream
+        .transform(new Function<JavaRDD<ObservationData>, JavaRDD<ObservationData>>()
     {
+      private static final long serialVersionUID = -6490438026689680564L;
+
       @Override
-      public Void call(JavaRDD<ObservationData> rdd) throws Exception
+      public JavaRDD<ObservationData> call(JavaRDD<ObservationData> rdd) throws Exception
       {
         if (rdd.count() > 0)
         {
-          List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
-              .groupBy(ObservationData::getGrouping)
-              .collect();
-
-          for (Tuple2<String, Iterable<ObservationData>> t : collect)
-          {
-            t._2().forEach(new Consumer<ObservationData>()
-            {
-              int i = 0;
-              @Override
-              public void accept(ObservationData o)
-              {
-                dataset.addValue(getSeriesNumber(t._1()), i++, (float)o.getValue());
-              }
-            });
-          }
-          dataset.advanceTime();
+          return rdd.groupBy(observationData -> observationData.getTimestamp() / 2)
+              .flatMapValues((Function<Iterable<ObservationData>, Iterable<ObservationData>>)this::computeArousalAndValence)
+              .values();
         }
         return null;
       }
+
+      private Iterable<ObservationData> computeArousalAndValence(Iterable<ObservationData> o)
+      {
+        List<ObservationData> returnList = new ArrayList<>();
+        if (Iterables.size(o) == 4)
+        {
+          double[] fp1fp2AlphaBeta = new double[4]; // fp1-A, fp2-A, fp1-B, fp2-B
+          Long avgTimestamp = null;
+          for (ObservationData obs : o)
+          {
+            avgTimestamp = avgTimestamp == null ? obs.getTimestamp() : avgTimestamp + obs.getTimestamp();
+            fp1fp2AlphaBeta[getIndex(obs.getGrouping())] = obs.getValue();
+          }
+          avgTimestamp /= 4;
+
+          // arousal
+          double arousalEmil = ((fp1fp2AlphaBeta[0] - fp1fp2AlphaBeta[2]) + (fp1fp2AlphaBeta[1] - fp1fp2AlphaBeta[3])) / 2;
+          returnList.add(new ObservationData(
+              "AROUSAL_EMIL",
+              "",
+              avgTimestamp,
+              String.valueOf(arousalEmil)
+          ));
+
+          // Sergio Giraldo, Rafael Ramirez:2013:Brain-Activity-Driven Real-Time Music Emotive Control:4
+          double arousal = (fp1fp2AlphaBeta[2] + fp1fp2AlphaBeta[3]) / (fp1fp2AlphaBeta[0] + fp1fp2AlphaBeta[1]);
+          returnList.add(new ObservationData(
+              "AROUSAL_GIRALDO_RAMIREZ",
+              "",
+              avgTimestamp,
+              String.valueOf(arousal)
+          ));
+
+          // valence
+          // Kenneth Hugdahl, Richard J. Davidson:2003:The asymmetrical brain:568
+          double valenceEmil = fp1fp2AlphaBeta[1] - fp1fp2AlphaBeta[0];
+          returnList.add(new ObservationData(
+              "VALENCE_EMIL",
+              "",
+              avgTimestamp,
+              String.valueOf(arousal)
+          ));
+          // Sergio Giraldo, Rafael Ramirez:2013:Brain-Activity-Driven Real-Time Music Emotive Control:4
+          double valence = fp1fp2AlphaBeta[1] / fp1fp2AlphaBeta[3] - fp1fp2AlphaBeta[0] / fp1fp2AlphaBeta[2];
+          returnList.add(new ObservationData(
+              "VALENCE_GIRALDO_RAMIREZ",
+              "",
+              avgTimestamp,
+              String.valueOf(arousal)
+          ));
+        }
+        return returnList;
+      }
     });
 
-    //JavaDStream<ObservationData> filteredZephyrStream = zephyrStream
-    //    .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr);
-    //
-    //JavaDStream<ObservationData> union = filteredZephyrStream.union(eegStream);
-    //CassandraStreamingJavaUtil.javaFunctions(union)
-    //    .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
-    //    .saveToCassandra();
+    JavaDStream<ObservationData> filteredZephyrStream = zephyrStream
+        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr);
+
+    JavaDStream<ObservationData> union = filteredZephyrStream.union(museStream).union(eegArousalAndValenceStream);
+    CassandraStreamingJavaUtil.javaFunctions(union)
+        .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
+        .saveToCassandra();
 
     //    JavaDStream<ObservationData> windowDStream = cr.window(Durations.seconds(10), Durations.seconds(2));
     //    zephyrStream.mapToPair((PairFunction<ObservationData, String, ObservationData>)observationData -> new Tuple2<>(observationData.getGrouping(), observationData))
@@ -208,7 +220,7 @@ public class TestSparkStreaming extends JPanel
     ssc.awaitTermination();
   }
 
-  private int getSeriesNumber(String s)
+  private int getIndex(String s)
   {
     switch (s)
     {

@@ -11,10 +11,10 @@ public class ObservationData implements Serializable
   private static final long serialVersionUID = 1572082499775592473L;
   private String m_name;
   private String m_unit;
-  private long m_timestamp;
+  private Long m_timestamp;
   private double m_value;
 
-  public ObservationData(String name, String unit, long timestamp, String value)
+  public ObservationData(String name, String unit, Long timestamp, String value)
   {
     m_name = name;
     m_unit = unit;
@@ -42,7 +42,7 @@ public class ObservationData implements Serializable
     return m_unit;
   }
 
-  public long getTimestamp()
+  public Long getTimestamp()
   {
     return m_timestamp;
   }
