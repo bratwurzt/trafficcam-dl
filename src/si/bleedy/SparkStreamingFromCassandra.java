@@ -2,23 +2,20 @@ package si.bleedy;
 
 import java.io.Serializable;
 import java.net.URL;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.List;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.function.VoidFunction;
-import org.apache.spark.rdd.RDD;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.streaming.Durations;
-import org.apache.spark.streaming.StreamingContext;
+import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.dstream.ConstantInputDStream;
 import com.datastax.spark.connector.japi.CassandraRow;
 import com.datastax.spark.connector.japi.CassandraStreamingJavaUtil;
 
-import scala.runtime.AbstractFunction1;
-import scala.runtime.BoxedUnit;
 import si.bleedy.data.ObservationData;
 
 /**
@@ -44,13 +41,14 @@ public class SparkStreamingFromCassandra implements Serializable
         .setMaster("local[3]");
 
     // streaming
-    JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.seconds(5));
+    JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.seconds(1));
 
+    long startTime = System.currentTimeMillis() - 3 * 60 * 60 * 1000;
     JavaRDD<ObservationData> javaRDD = CassandraStreamingJavaUtil.javaFunctions(ssc)
         .cassandraTable("obskeyspace", "observations")
-        .select("value")
-        .where("name in (?,?,?)", "ecg", "r to r", "respiration rate")
-//        .where("name = ?", "ecg")
+        //.where("timestamp > ?", startTime)
+        //.where("name in (?,?,?)", "ecg", "r to r", "respiration rate")
+        .where("name = ?", "r to r")
         .map(CassandraRow::toMap)
         .map(entry -> new ObservationData(
             (String)entry.get("name"),
@@ -58,21 +56,18 @@ public class SparkStreamingFromCassandra implements Serializable
             (long)entry.get("timestamp"),
             (String)entry.get("value")))
         ;
-//    ConcurrentLinkedDeque<JavaRDD<ObservationData>> queue = new ConcurrentLinkedDeque<>();
-//    JavaDStream<ObservationData> dStream = ssc.queueStream(queue);
+    JavaDStream<ObservationData> inputDStream = Helpers.createJavaDStream(ssc, javaRDD);
 
-//    StreamingContext ssc1 = ssc.ssc();
-//    RDD<ObservationData> rdd = javaRDD.rdd();
-//    ConstantInputDStream<ObservationData> inputDStream = new ConstantInputDStream(ssc1, rdd,  new scala.reflect.ClassTag<ObservationData>());
-//    inputDStream.window(Durations.seconds(5), Durations.seconds(1))
-//        .foreachRDD(new AbstractFunction1<RDD<ObservationData>, BoxedUnit>()
-//        {
-//          @Override
-//          public BoxedUnit apply(RDD<ObservationData> v1)
-//          {
-//            return null;
-//          }
-//        });
+    inputDStream.window(Durations.seconds(2), Durations.seconds(1))
+        .foreachRDD(new Function<JavaRDD<ObservationData>, Void>()
+        {
+          @Override
+          public Void call(JavaRDD<ObservationData> rdd) throws Exception
+          {
+            long count = rdd.count();
+            return null;
+          }
+        });
 
     ssc.start();
     ssc.awaitTermination();

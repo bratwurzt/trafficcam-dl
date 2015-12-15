@@ -28,14 +28,14 @@ import si.bleedy.data.ObservationData;
 /**
  * @author bratwurzt
  */
-public class IOTReceiver extends Receiver<ObservationData> implements Serializable
+public class IOTTCPReceiver extends Receiver<ObservationData> implements Serializable
 {
   private static final long serialVersionUID = 1840376582814772051L;
   private ServerSocket m_serverSocket;
   protected boolean m_isStopped = false;
   protected int m_serverPort;
 
-  public IOTReceiver(StorageLevel storageLevel, int port)
+  public IOTTCPReceiver(StorageLevel storageLevel, int port)
   {
     super(storageLevel);
     m_serverPort = port;
@@ -153,4 +153,9 @@ public class IOTReceiver extends Receiver<ObservationData> implements Serializab
     }
   }
 
+  @Override
+  public StorageLevel storageLevel()
+  {
+    return StorageLevel.MEMORY_ONLY();
+  }
 }

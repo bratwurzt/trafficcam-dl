@@ -13,7 +13,6 @@ import org.apache.spark.api.java.function.Function;
 
 import com.google.common.collect.Lists;
 
-import si.bleedy.data.polis.KriminalnoDejanje;
 
 /**
  * @author DusanM
@@ -37,10 +36,10 @@ public class TestSparkFile implements Serializable
     JavaRDD<String> osebe = sc.textFile("H:\\Temp\\polis statistika\\kd2014\\OSEBE.TXT");
     JavaRDD<String> sifranti = sc.textFile("H:\\Temp\\polis statistika\\kd2014\\SIFRANTI.TXT");
 
-    JavaRDD<KriminalnoDejanje> map = dogodki
-        .map((Function<String, Iterable<String>>)string -> Arrays.stream(string.split("\\$")).map(String::trim).collect(Collectors.toList()))
-        .map(e -> new KriminalnoDejanje(Lists.newArrayList(e)));
-    List<KriminalnoDejanje> collect = map.collect();
+    //JavaRDD<KriminalnoDejanje> map = dogodki
+    //    .map((Function<String, Iterable<String>>)string -> Arrays.stream(string.split("\\$")).map(String::trim).collect(Collectors.toList()))
+    //    .map(e -> new KriminalnoDejanje(Lists.newArrayList(e)));
+    //List<KriminalnoDejanje> collect = map.collect();
     System.out.println();
   }
 

@@ -42,7 +42,7 @@ public class TestSparkZephyr extends ApplicationFrame
     super(name);
     SparkConf conf = new SparkConf()
         .setAppName("heart")
-        .set("spark.cassandra.connection.host", "10.99.11.148")
+        .set("spark.cassandra.connection.host", "192.168.1.2")
         .set("spark.cassandra.connection.port", "9042")
         .setMaster("local[2]")
 //        .setMaster("spark://10.99.11.148:7077")
@@ -61,7 +61,7 @@ public class TestSparkZephyr extends ApplicationFrame
 //    sc.addJar("C:/Java/hadoop-hdfs-2.7.1/hadoop-hdfs-2.7.1.jar");
     CassandraTableScanJavaRDD<CassandraRow> cassandraRowsRDD = CassandraJavaUtil.javaFunctions(sc)
         .cassandraTable("obskeyspace", "observations");
-    long startTime = System.currentTimeMillis() - 5 * 60 * 1000;
+    long startTime = System.currentTimeMillis() - 10 * 60 * 1000;
     long endTime = System.currentTimeMillis() - 23 * 60 * 60 * 1000;
     Map<String, Iterable<ObservationData>> map = cassandraRowsRDD
         .where("timestamp > ?", startTime)
@@ -147,7 +147,7 @@ public class TestSparkZephyr extends ApplicationFrame
     // streaming
     //JavaStreamingContext ssc = new JavaStreamingContext(sc, Durations.minutes(30));
     //JavaReceiverInputDStream<Iterable<CounterData>> cr = ssc.receiverStream(
-    //    new IOTReceiver(StorageLevel.MEMORY_ONLY(), ssc.sparkContext())
+    //    new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), ssc.sparkContext())
     //);
     //cr.print();
     //ssc.start();

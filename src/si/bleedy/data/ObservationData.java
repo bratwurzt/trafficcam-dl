@@ -60,6 +60,11 @@ public class ObservationData implements Serializable
     return m_value;
   }
 
+  public String getStringValue()
+  {
+    return String.valueOf(m_value);
+  }
+
   public Boolean filter()
   {
     return
@@ -69,7 +74,7 @@ public class ObservationData implements Serializable
         //|| "heart rate".equals(getName())
         //|| "peak acceleration".equals(getName())
         //"r to r".equals(getName())
-        !"ecg".equals(getName()) || getValue() < 1000
+        !"sleep".equals(getName()) || "movement".equals(getUnit())
         //&& getValue() < 1000
         ;
   }
