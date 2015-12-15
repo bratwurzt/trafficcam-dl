@@ -32,37 +32,49 @@
         <!--<version>2.1.9</version>-->
         <!--</dependency>-->
 
+        <!--<dependency>-->
+        <!--<groupId>org.apache.hadoop</groupId>-->
+        <!--<artifactId>hadoop-hdfs</artifactId>-->
+        <!--<version>2.7.1</version>-->
+        <!--</dependency>-->
+
+
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.11</artifactId>
+            <artifactId>spark-core_2.10</artifactId>
             <version>1.4.1</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-streaming_2.11</artifactId>
+            <artifactId>spark-streaming_2.10</artifactId>
             <version>1.4.1</version>
         </dependency>
 
         <dependency>
             <groupId>com.datastax.spark</groupId>
-            <artifactId>spark-cassandra-connector-java_2.11</artifactId>
+            <artifactId>spark-cassandra-connector-java_2.10</artifactId>
             <version>1.4.1</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.datastax.spark</groupId>
+            <artifactId>spark-cassandra-connector_2.10</artifactId>
+            <version>1.4.1</version>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-mllib_2.11</artifactId>
+            <artifactId>spark-mllib_2.10</artifactId>
             <version>1.4.1</version>
         </dependency>
 
         <!--Other-->
 
         <dependency>
-        	<groupId>org.jfree</groupId>
-        	<artifactId>jfreechart</artifactId>
-        	<version>1.0.19</version>
+            <groupId>org.jfree</groupId>
+            <artifactId>jfreechart</artifactId>
+            <version>1.0.19</version>
         </dependency>
 
         <dependency>
@@ -100,6 +112,45 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.2</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <filters>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>org.apache.cassandra:cassandra-all</exclude>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                    <artifactSet>
+                        <excludes>
+                            <exclude>org.apache.cassandra:cassandra-all:*</exclude>
+                            <exclude>org.apache.spark:*</exclude>
+                            <exclude>org.jfree:*</exclude>
+                            <exclude>net.sourceforge.javacsv:*</exclude>
+                            <exclude>javax.json:*</exclude>
+                            <exclude>org.glassfish:*</exclude>
+                            <exclude>com.google.protobuf:*</exclude>
+                        </excludes>
+                    </artifactSet>
+                    <finalName>uber-${project.artifactId}-${project.version}</finalName>
                 </configuration>
             </plugin>
         </plugins>

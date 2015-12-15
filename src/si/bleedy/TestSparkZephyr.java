@@ -42,18 +42,31 @@ public class TestSparkZephyr extends ApplicationFrame
     super(name);
     SparkConf conf = new SparkConf()
         .setAppName("heart")
-        .set("spark.cassandra.connection.host", "cassandra.marand.si")
+        .set("spark.cassandra.connection.host", "10.99.11.148")
         .set("spark.cassandra.connection.port", "9042")
-        .setMaster("local[2]");
+        .setMaster("local[2]")
+//        .setMaster("spark://10.99.11.148:7077")
+//        .setJars(new String[]{
+//            "H:\\Users\\DusanM\\.m2\\repository\\com\\datastax\\spark\\spark-cassandra-connector_2.10\\1.4.1\\spark-cassandra-connector_2.10-1.4.1.jar",
+//            "H:\\Users\\DusanM\\.m2\\repository\\com\\datastax\\spark\\spark-cassandra-connector-java_2.10\\1.4.1\\spark-cassandra-connector-java_2.10-1.4.1.jar",
+//            "H:\\Projects\\trafficcam-dl\\target\\uber-trafficcam-dl-1.0-SNAPSHOT.jar"
+//            "C:\\Java\\spark-cassandra-connector-embedded_2.10-1.4.1.jar"
+//        })
+        ;
+
     final JavaSparkContext sc = new JavaSparkContext(conf);
+//    sc.addJar("H:\\Users\\DusanM\\.m2\\repository\\com\\datastax\\spark\\spark-cassandra-connector_2.10\\1.4.1\\spark-cassandra-connector_2.10-1.4.1.jar");
+//    sc.addJar("H:\\Users\\DusanM\\.m2\\repository\\com\\datastax\\spark\\spark-cassandra-connector-java_2.10\\1.4.1\\spark-cassandra-connector-java_2.10-1.4.1.jar");
+//    sc.addJar("H:\\Users\\DusanM\\.m2\\repository\\com\\datastax\\cassandra\\cassandra-driver-core\\2.1.9\\cassandra-driver-core-2.1.9.jar");
+//    sc.addJar("C:/Java/hadoop-hdfs-2.7.1/hadoop-hdfs-2.7.1.jar");
     CassandraTableScanJavaRDD<CassandraRow> cassandraRowsRDD = CassandraJavaUtil.javaFunctions(sc)
         .cassandraTable("obskeyspace", "observations");
     long startTime = System.currentTimeMillis() - 5 * 60 * 1000;
-    long endTime = System.currentTimeMillis() - 60 * 1000;
+    long endTime = System.currentTimeMillis() - 23 * 60 * 60 * 1000;
     Map<String, Iterable<ObservationData>> map = cassandraRowsRDD
         .where("timestamp > ?", startTime)
-        //.where("timestamp < ?", endTime)
-        .where("name in (?,?)", "AROUSAL_EMIL", "AROUSAL_GIRALDO_RAMIREZ"/*, "VALENCE_EMIL", "VALENCE_GIRALDO_RAMIREZ"*/)
+//        .where("timestamp < ?", endTime)
+        .where("name in (?,?,?)", "ecg", "r to r", "respiration rate")
 //        .where("name = ?", "ecg")
         .map(CassandraRow::toMap)
         .map(entry -> new ObservationData(
@@ -62,7 +75,6 @@ public class TestSparkZephyr extends ApplicationFrame
             (long)entry.get("timestamp"),
             (String)entry.get("value")))
 //            .filter(ObservationData::filter)
-
         .groupBy(ObservationData::getGrouping)
         .collectAsMap();
     TimeSeriesCollection dataset = new TimeSeriesCollection();
@@ -88,27 +100,27 @@ public class TestSparkZephyr extends ApplicationFrame
     );
     //chart.getXYPlot().setRenderer(new XYSplineRenderer());
     ChartPanel chartPanel = new ChartPanel(chart);
-    chartPanel.addChartMouseListener(new ChartMouseListener()
-    {
-      @Override
-      public void chartMouseClicked(ChartMouseEvent chartMouseEvent)
-      {
-        //XYItemEntity entity = (XYItemEntity)chartMouseEvent.getEntity();
-        //int seriesIndex = entity.getSeriesIndex();
-        //int itemIndex = entity.getItem();
-        //String[] split = entity.getToolTipText().split("-");
-        //if (split.length == 3)
-        ////map.entrySet().toArray()[seriesIndex];
-        //{
-        //  System.out.println();
-        //}
-      }
-
-      @Override
-      public void chartMouseMoved(ChartMouseEvent chartMouseEvent)
-      {
-      }
-    });
+//    chartPanel.addChartMouseListener(new ChartMouseListener()
+//    {
+//      @Override
+//      public void chartMouseClicked(ChartMouseEvent chartMouseEvent)
+//      {
+//        //XYItemEntity entity = (XYItemEntity)chartMouseEvent.getEntity();
+//        //int seriesIndex = entity.getSeriesIndex();
+//        //int itemIndex = entity.getItem();
+//        //String[] split = entity.getToolTipText().split("-");
+//        //if (split.length == 3)
+//        ////map.entrySet().toArray()[seriesIndex];
+//        //{
+//        //  System.out.println();
+//        //}
+//      }
+//
+//      @Override
+//      public void chartMouseMoved(ChartMouseEvent chartMouseEvent)
+//      {
+//      }
+//    });
     chartPanel.setPreferredSize(new java.awt.Dimension(800, 600));
     chartPanel.setMouseZoomable(true, false);
     setContentPane(chartPanel);

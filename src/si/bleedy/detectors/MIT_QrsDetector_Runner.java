@@ -89,7 +89,6 @@ public class MIT_QrsDetector_Runner
 
     while (strLine != null)
     {
-
       InputStream FiFile = new FileInputStream(data_dir + strLine + ".txt");
 
       start_time = System.currentTimeMillis();
