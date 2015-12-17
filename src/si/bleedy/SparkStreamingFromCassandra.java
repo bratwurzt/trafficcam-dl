@@ -31,8 +31,7 @@ public class SparkStreamingFromCassandra implements Serializable
     PropertyConfigurator.configure(url);
   }
 
-
-  public SparkStreamingFromCassandra(String name)
+  public SparkStreamingFromCassandra()
   {
     SparkConf conf = new SparkConf()
         .setAppName("heart")
@@ -56,44 +55,25 @@ public class SparkStreamingFromCassandra implements Serializable
             (long)entry.get("timestamp"),
             (String)entry.get("value")))
         ;
-    JavaDStream<ObservationData> inputDStream = Helpers.createJavaDStream(ssc, javaRDD);
+//    JavaDStream<ObservationData> inputDStream = Helpers.createJavaDStream(ssc, javaRDD);
 
-    inputDStream.window(Durations.seconds(2), Durations.seconds(1))
-        .foreachRDD(new Function<JavaRDD<ObservationData>, Void>()
-        {
-          @Override
-          public Void call(JavaRDD<ObservationData> rdd) throws Exception
-          {
-            long count = rdd.count();
-            return null;
-          }
-        });
+//    inputDStream.window(Durations.seconds(2), Durations.seconds(1))
+//        .foreachRDD(new Function<JavaRDD<ObservationData>, Void>()
+//        {
+//          @Override
+//          public Void call(JavaRDD<ObservationData> rdd) throws Exception
+//          {
+//            long count = rdd.count();
+//            return null;
+//          }
+//        });
 
     ssc.start();
     ssc.awaitTermination();
   }
 
-  private int getIndex(String s)
-  {
-    switch (s)
-    {
-      case "ALPHA_ABSOLUTE_FP1":
-        return 0;
-      case "ALPHA_ABSOLUTE_FP2":
-        return 1;
-      case "BETA_ABSOLUTE_FP1":
-        return 2;
-      case "BETA_ABSOLUTE_FP2":
-        return 3;
-      default:
-        break;
-    }
-
-    return 0;
-  }
-
   public static void main(String[] args)
   {
-    SparkStreamingFromCassandra demo = new SparkStreamingFromCassandra("test");
+    SparkStreamingFromCassandra demo = new SparkStreamingFromCassandra();
   }
 }

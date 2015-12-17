@@ -52,6 +52,12 @@
         </dependency>
 
         <dependency>
+        	<groupId>org.apache.spark</groupId>
+        	<artifactId>spark-streaming-mqtt_2.10</artifactId>
+        	<version>1.4.1</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.datastax.spark</groupId>
             <artifactId>spark-cassandra-connector-java_2.10</artifactId>
             <version>1.4.1</version>
@@ -115,44 +121,44 @@
                 </configuration>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.2</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <filters>
-                        <filter>
-                            <artifact>*:*</artifact>
-                            <excludes>
-                                <exclude>org.apache.cassandra:cassandra-all</exclude>
-                                <exclude>META-INF/*.SF</exclude>
-                                <exclude>META-INF/*.DSA</exclude>
-                                <exclude>META-INF/*.RSA</exclude>
-                            </excludes>
-                        </filter>
-                    </filters>
-                    <artifactSet>
-                        <excludes>
-                            <exclude>org.apache.cassandra:cassandra-all:*</exclude>
-                            <exclude>org.apache.spark:*</exclude>
-                            <exclude>org.jfree:*</exclude>
-                            <exclude>net.sourceforge.javacsv:*</exclude>
-                            <exclude>javax.json:*</exclude>
-                            <exclude>org.glassfish:*</exclude>
-                            <exclude>com.google.protobuf:*</exclude>
-                        </excludes>
-                    </artifactSet>
-                    <finalName>uber-${project.artifactId}-${project.version}</finalName>
-                </configuration>
-            </plugin>
+            <!--<plugin>-->
+                <!--<groupId>org.apache.maven.plugins</groupId>-->
+                <!--<artifactId>maven-shade-plugin</artifactId>-->
+                <!--<version>2.4.2</version>-->
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<phase>package</phase>-->
+                        <!--<goals>-->
+                            <!--<goal>shade</goal>-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+                <!--<configuration>-->
+                    <!--<filters>-->
+                        <!--<filter>-->
+                            <!--<artifact>*:*</artifact>-->
+                            <!--<excludes>-->
+                                <!--<exclude>org.apache.cassandra:cassandra-all</exclude>-->
+                                <!--<exclude>META-INF/*.SF</exclude>-->
+                                <!--<exclude>META-INF/*.DSA</exclude>-->
+                                <!--<exclude>META-INF/*.RSA</exclude>-->
+                            <!--</excludes>-->
+                        <!--</filter>-->
+                    <!--</filters>-->
+                    <!--<artifactSet>-->
+                        <!--<excludes>-->
+                            <!--<exclude>org.apache.cassandra:cassandra-all:*</exclude>-->
+                            <!--<exclude>org.apache.spark:*</exclude>-->
+                            <!--<exclude>org.jfree:*</exclude>-->
+                            <!--<exclude>net.sourceforge.javacsv:*</exclude>-->
+                            <!--<exclude>javax.json:*</exclude>-->
+                            <!--<exclude>org.glassfish:*</exclude>-->
+                            <!--<exclude>com.google.protobuf:*</exclude>-->
+                        <!--</excludes>-->
+                    <!--</artifactSet>-->
+                    <!--<finalName>uber-${project.artifactId}-${project.version}</finalName>-->
+                <!--</configuration>-->
+            <!--</plugin>-->
         </plugins>
     </build>
 </project>

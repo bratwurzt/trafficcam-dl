@@ -1,5 +1,7 @@
 package si.bleedy;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,37 +39,28 @@ import si.bleedy.data.ObservationData;
  */
 public class TestSparkZephyr extends ApplicationFrame
 {
-  public TestSparkZephyr(String name)
+  public TestSparkZephyr(String name) throws ParseException
   {
     super(name);
+    long start = System.currentTimeMillis();
     SparkConf conf = new SparkConf()
         .setAppName("heart")
-        .set("spark.cassandra.connection.host", "192.168.1.2")
+        .set("spark.cassandra.connection.host", "cassandra.marand.si")
         .set("spark.cassandra.connection.port", "9042")
-        .setMaster("local[2]")
-//        .setMaster("spark://10.99.11.148:7077")
-//        .setJars(new String[]{
-//            "H:\\Users\\DusanM\\.m2\\repository\\com\\datastax\\spark\\spark-cassandra-connector_2.10\\1.4.1\\spark-cassandra-connector_2.10-1.4.1.jar",
-//            "H:\\Users\\DusanM\\.m2\\repository\\com\\datastax\\spark\\spark-cassandra-connector-java_2.10\\1.4.1\\spark-cassandra-connector-java_2.10-1.4.1.jar",
-//            "H:\\Projects\\trafficcam-dl\\target\\uber-trafficcam-dl-1.0-SNAPSHOT.jar"
-//            "C:\\Java\\spark-cassandra-connector-embedded_2.10-1.4.1.jar"
-//        })
+        .setMaster("local[3]")
         ;
 
     final JavaSparkContext sc = new JavaSparkContext(conf);
-//    sc.addJar("H:\\Users\\DusanM\\.m2\\repository\\com\\datastax\\spark\\spark-cassandra-connector_2.10\\1.4.1\\spark-cassandra-connector_2.10-1.4.1.jar");
-//    sc.addJar("H:\\Users\\DusanM\\.m2\\repository\\com\\datastax\\spark\\spark-cassandra-connector-java_2.10\\1.4.1\\spark-cassandra-connector-java_2.10-1.4.1.jar");
-//    sc.addJar("H:\\Users\\DusanM\\.m2\\repository\\com\\datastax\\cassandra\\cassandra-driver-core\\2.1.9\\cassandra-driver-core-2.1.9.jar");
-//    sc.addJar("C:/Java/hadoop-hdfs-2.7.1/hadoop-hdfs-2.7.1.jar");
     CassandraTableScanJavaRDD<CassandraRow> cassandraRowsRDD = CassandraJavaUtil.javaFunctions(sc)
         .cassandraTable("obskeyspace", "observations");
-    long startTime = System.currentTimeMillis() - 10 * 60 * 1000;
-    long endTime = System.currentTimeMillis() - 23 * 60 * 60 * 1000;
+    SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+    long startTime = dateFormat.parse("16.12.2015 02:01").getTime();
+    long endTime = dateFormat.parse("16.12.2015 04:01").getTime();
     Map<String, Iterable<ObservationData>> map = cassandraRowsRDD
-        .where("timestamp > ?", startTime)
+//        .where("timestamp > ?", startTime)
 //        .where("timestamp < ?", endTime)
-        .where("name in (?,?,?)", "ecg", "r to r", "respiration rate")
-//        .where("name = ?", "ecg")
+        .where("name in (?,?)", "gsr", "temp")
+//        .where("name = ?", "analog")
         .map(CassandraRow::toMap)
         .map(entry -> new ObservationData(
             (String)entry.get("name"),
@@ -77,6 +70,8 @@ public class TestSparkZephyr extends ApplicationFrame
 //            .filter(ObservationData::filter)
         .groupBy(ObservationData::getGrouping)
         .collectAsMap();
+
+    System.out.println("Time taken for collection from remote cassandra server (ms): " + (System.currentTimeMillis() - start));
     TimeSeriesCollection dataset = new TimeSeriesCollection();
     final List<TimeSeries> timeseries = new LinkedList<>();
     for (Map.Entry<String, Iterable<ObservationData>> entry : map.entrySet())
@@ -157,8 +152,15 @@ public class TestSparkZephyr extends ApplicationFrame
 
   public static void main(String[] args)
   {
-    TestSparkZephyr demo = new TestSparkZephyr("test");
-    demo.pack();
-    demo.setVisible(true);
+    try
+    {
+      TestSparkZephyr demo = new TestSparkZephyr("test");
+      demo.pack();
+      demo.setVisible(true);
+    }
+    catch (ParseException e)
+    {
+      e.printStackTrace();
+    }
   }
 }

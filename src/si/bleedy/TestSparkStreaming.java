@@ -1,34 +1,50 @@
 package si.bleedy;
 
+import java.awt.*;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
-
-import javax.swing.JPanel;
+import java.util.function.Consumer;
+import javax.swing.*;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import com.datastax.spark.connector.japi.CassandraJavaUtil;
-import com.datastax.spark.connector.japi.CassandraStreamingJavaUtil;
+import org.apache.spark.streaming.mqtt.MQTTUtils;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.DateAxis;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.plot.CombinedDomainXYPlot;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
+import org.jfree.data.time.Millisecond;
+import org.jfree.data.time.TimeSeries;
+import org.jfree.data.time.TimeSeriesCollection;
+import org.jfree.ui.ApplicationFrame;
+import org.jfree.ui.RefineryUtilities;
 import com.google.common.collect.Iterables;
 
-import eu.fistar.sdcs.runnable.IOTTCPReceiver;
+import scala.Tuple2;
 import si.bleedy.data.ObservationData;
 
 /**
  * @author bratwurzt
  */
-public class TestSparkStreaming extends JPanel implements Serializable
+public class TestSparkStreaming extends ApplicationFrame implements Serializable
 {
   private static final long serialVersionUID = -4289949126909167376L;
   private static final Logger LOG = Logger.getLogger(TestSparkStreaming.class);
@@ -39,31 +55,67 @@ public class TestSparkStreaming extends JPanel implements Serializable
     PropertyConfigurator.configure(url);
   }
 
-  //private final DynamicTimeSeriesCollection dataset;
-  //private final JFreeChart chart;
+  /**
+   * The number of subplots.
+   */
+  public static final int SUBPLOT_COUNT = 2;
+
+  /**
+   * The datasets.
+   */
+  public final TimeSeriesCollection[] datasets;
+
+  /**
+   * The most recent value added to series 1.
+   */
+  private double[] lastValue = new double[SUBPLOT_COUNT];
 
   public TestSparkStreaming(String name)
   {
-    //dataset = new DynamicTimeSeriesCollection(4, 60, new Second());
-    //dataset.setTimeBase(new Second(new Date()));
-    //dataset.addSeries(new float[1], 0, "FP1_ALPHA");
-    //dataset.addSeries(new float[1], 1, "FP2_ALPHA");
-    //dataset.addSeries(new float[1], 2, "FP1_BETA");
-    //dataset.addSeries(new float[1], 3, "FP2_BETA");
-    //chart = ChartFactory.createTimeSeriesChart(name, "Time", name, dataset, true, true, false);
-    //XYPlot plot = chart.getXYPlot();
-    //DateAxis axis = (DateAxis)plot.getDomainAxis();
-    //axis.setFixedAutoRange(10000);
-    //axis.setDateFormatOverride(new SimpleDateFormat("ss.SS"));
-    //final ChartPanel chartPanel = new ChartPanel(chart);
-    //add(chartPanel);
-    //
-    //JFrame frame = new JFrame("testing");
-    //frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-    //frame.add(this);
-    //frame.pack();
-    //frame.setVisible(true);
+    super(name);
+    final CombinedDomainXYPlot plot = new CombinedDomainXYPlot(new DateAxis("Time"));
+    this.datasets = new TimeSeriesCollection[SUBPLOT_COUNT];
 
+    for (int i = 0; i < SUBPLOT_COUNT; i++)
+    {
+      this.lastValue[i] = 100.0;
+      final TimeSeries series = new TimeSeries("rpi " + i, Millisecond.class);
+      this.datasets[i] = new TimeSeriesCollection(series);
+      final NumberAxis rangeAxis = new NumberAxis("Y" + i);
+      rangeAxis.setAutoRangeIncludesZero(false);
+      final XYPlot subplot = new XYPlot(
+          this.datasets[i], null, rangeAxis, new StandardXYItemRenderer()
+      );
+      subplot.setBackgroundPaint(Color.lightGray);
+      subplot.setDomainGridlinePaint(Color.white);
+      subplot.setRangeGridlinePaint(Color.white);
+      plot.add(subplot);
+    }
+
+    final JFreeChart chart = new JFreeChart("Dynamic Data Demo 3", plot);
+    //        chart.getLegend().setAnchor(Legend.EAST);
+    chart.setBorderPaint(Color.black);
+    chart.setBorderVisible(true);
+    chart.setBackgroundPaint(Color.white);
+
+    plot.setBackgroundPaint(Color.lightGray);
+    plot.setDomainGridlinePaint(Color.white);
+    plot.setRangeGridlinePaint(Color.white);
+    //      plot.setAxisOffset(new Spacer(Spacer.ABSOLUTE, 4, 4, 4, 4));
+    final ValueAxis axis = plot.getDomainAxis();
+    axis.setAutoRange(true);
+    axis.setFixedAutoRange(60000.0);  // 60 seconds
+
+    final JPanel content = new JPanel(new BorderLayout());
+    final ChartPanel chartPanel = new ChartPanel(chart);
+    content.add(chartPanel);
+    setContentPane(content);
+
+
+  }
+
+  private void runSpark()
+  {
     SparkConf conf = new SparkConf()
         .setAppName("heart")
         .set("spark.cassandra.connection.host", "cassandra.marand.si")
@@ -72,9 +124,21 @@ public class TestSparkStreaming extends JPanel implements Serializable
     // streaming
     JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.seconds(1));
 
-    JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
-        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
-    );
+    //    JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
+    //        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
+    //    );
+
+    JavaReceiverInputDStream<String> stream = MQTTUtils.createStream(ssc, "tcp://10.99.9.25:1883", "temp/gsr");
+    JavaDStream<ObservationData> mqttStream = stream.map(entry -> entry.split("\\|"))
+        .flatMap((FlatMapFunction<String[], ObservationData>)strings -> {
+          int tempAnalog = Integer.parseInt(strings[0]);
+          int gsrAnalog = Integer.parseInt(strings[1]);
+          long timestamp = Long.parseLong(strings[2]);
+          return Arrays.asList(
+              new ObservationData("gsr", "analog", timestamp, gsrAnalog),
+              new ObservationData("temp", "analog", timestamp, tempAnalog)
+          );
+        });
 
     //JavaDStream<ObservationData> museStream = ssc.receiverStream(
     //    new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8100)
@@ -83,37 +147,39 @@ public class TestSparkStreaming extends JPanel implements Serializable
     //JavaDStream<ObservationData> eegArousalAndValenceStream = getMuseArousalValenceDStream(museStream);
 
     // filter Zephyr ecg
-    JavaDStream<ObservationData> filteredZephyrStream = zephyrStream
-        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr);
+    //    JavaDStream<ObservationData> filteredZephyrStream = zephyrStream
+    //        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr);
 
-    //zephyrStream.foreachRDD(new Function<JavaRDD<ObservationData>, Void>()
-    //    {
-    //      @Override
-    //      public Void call(JavaRDD<ObservationData> rdd) throws Exception
-    //      {
-    //        if (rdd.count() > 0)
-    //        {
-    //          List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
-    //              .groupBy(ObservationData::getGrouping)
-    //              .collect();
-    //
-    //          for (Tuple2<String, Iterable<ObservationData>> t : collect)
-    //          {
-    //            t._2().forEach(new Consumer<ObservationData>()
-    //            {
-    //              int i = 0;
-    //              @Override
-    //              public void accept(ObservationData o)
-    //              {
-    //                dataset.addValue(getSeriesNumber(t._1()), i++, (float)o.getValue());
-    //              }
-    //            });
-    //          }
-    //          dataset.advanceTime();
-    //        }
-    //        return null;
-    //      }
-    //    });
+    mqttStream.foreachRDD(new Function<JavaRDD<ObservationData>, Void>()
+    {
+      @Override
+      public Void call(JavaRDD<ObservationData> rdd) throws Exception
+      {
+        if (rdd.count() > 0)
+        {
+          List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
+              .groupBy(ObservationData::getGrouping)
+              .collect();
+
+          for (Tuple2<String, Iterable<ObservationData>> t : collect)
+          {
+            t._2().forEach(new Consumer<ObservationData>()
+            {
+              @Override
+              public void accept(ObservationData o)
+              {
+                final Millisecond now = new Millisecond();
+                System.out.println("Now = " + now.toString());
+                int index = "gsr_analog".equals(t._1()) ? 1 : 0;
+                lastValue[index] = o.getValue();
+                datasets[index].getSeries(0).add(new Millisecond(new Date(o.getTimestamp())), lastValue[index]);
+              }
+            });
+          }
+        }
+        return null;
+      }
+    });
 
     //JavaDStream<ObservationData> zephyrStats = zephyrStream.filter(e -> "ecg".equals(e.getName()))
     //    .transform(rdd -> {
@@ -147,14 +213,14 @@ public class TestSparkStreaming extends JPanel implements Serializable
     //    });
 
     // Onion of everything!
-    JavaDStream<ObservationData> union = filteredZephyrStream
-        //.union(museStream)
-        //.union(eegArousalAndValenceStream)
-        //.union(zephyrStats)
-        ;
-    CassandraStreamingJavaUtil.javaFunctions(union)
-        .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
-        .saveToCassandra();
+//    JavaDStream<ObservationData> union = filteredZephyrStream
+    //.union(museStream)
+    //.union(eegArousalAndValenceStream)
+    //.union(zephyrStats)
+    ;
+//    CassandraStreamingJavaUtil.javaFunctions(union)
+//        .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
+//        .saveToCassandra();
 
     //    JavaDStream<ObservationData> windowDStream = cr.window(Durations.seconds(10), Durations.seconds(2));
     //    zephyrStream.mapToPair((PairFunction<ObservationData, String, ObservationData>)observationData -> new Tuple2<>(observationData.getGrouping(), observationData))
@@ -430,5 +496,9 @@ public class TestSparkStreaming extends JPanel implements Serializable
   public static void main(String[] args)
   {
     TestSparkStreaming demo = new TestSparkStreaming("test");
+    demo.pack();
+    RefineryUtilities.centerFrameOnScreen(demo);
+    demo.setVisible(true);
+    demo.runSpark();
   }
 }
