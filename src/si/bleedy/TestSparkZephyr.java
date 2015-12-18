@@ -54,12 +54,12 @@ public class TestSparkZephyr extends ApplicationFrame
     CassandraTableScanJavaRDD<CassandraRow> cassandraRowsRDD = CassandraJavaUtil.javaFunctions(sc)
         .cassandraTable("obskeyspace", "observations");
     SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-    long startTime = dateFormat.parse("16.12.2015 02:01").getTime();
+    long startTime = dateFormat.parse("17.12.2015 20:28").getTime();
     long endTime = dateFormat.parse("16.12.2015 04:01").getTime();
     Map<String, Iterable<ObservationData>> map = cassandraRowsRDD
-//        .where("timestamp > ?", startTime)
+        .where("timestamp > ?", startTime)
 //        .where("timestamp < ?", endTime)
-        .where("name in (?,?)", "gsr", "temp")
+        .where("name in (?,?,?)", "gsr", "temp", "ecg")
 //        .where("name = ?", "analog")
         .map(CassandraRow::toMap)
         .map(entry -> new ObservationData(
@@ -116,7 +116,7 @@ public class TestSparkZephyr extends ApplicationFrame
 //      {
 //      }
 //    });
-    chartPanel.setPreferredSize(new java.awt.Dimension(800, 600));
+    chartPanel.setPreferredSize(new java.awt.Dimension(1200, 960));
     chartPanel.setMouseZoomable(true, false);
     setContentPane(chartPanel);
 

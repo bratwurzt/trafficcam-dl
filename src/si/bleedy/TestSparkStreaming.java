@@ -1,6 +1,7 @@
 package si.bleedy;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
@@ -8,8 +9,10 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.function.Consumer;
-import javax.swing.*;
+import javax.swing.JPanel;
 
+import com.google.common.collect.Iterables;
+import eu.fistar.sdcs.runnable.IOTTCPReceiver;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
@@ -17,10 +20,10 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.mqtt.MQTTUtils;
 import org.jfree.chart.ChartPanel;
@@ -36,8 +39,6 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
-import com.google.common.collect.Iterables;
-
 import scala.Tuple2;
 import si.bleedy.data.ObservationData;
 
@@ -48,6 +49,8 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
 {
   private static final long serialVersionUID = -4289949126909167376L;
   private static final Logger LOG = Logger.getLogger(TestSparkStreaming.class);
+  //private float m_vcc = 3.3f;
+  private float m_vcc = 5.0f, ganancia = 5.0f, RefTension = 3.0f, Ra = 4640.0f, Rc = 4719.0f, Rb = 810.0f;
 
   static
   {
@@ -58,7 +61,7 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
   /**
    * The number of subplots.
    */
-  public static final int SUBPLOT_COUNT = 2;
+  public static final int SUBPLOT_COUNT = 3;
 
   /**
    * The datasets.
@@ -68,18 +71,20 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
   /**
    * The most recent value added to series 1.
    */
-  private double[] lastValue = new double[SUBPLOT_COUNT];
+  private final double[] lastValue;
 
   public TestSparkStreaming(String name)
   {
     super(name);
+    lastValue = new double[SUBPLOT_COUNT];
+
     final CombinedDomainXYPlot plot = new CombinedDomainXYPlot(new DateAxis("Time"));
     this.datasets = new TimeSeriesCollection[SUBPLOT_COUNT];
 
     for (int i = 0; i < SUBPLOT_COUNT; i++)
     {
       this.lastValue[i] = 100.0;
-      final TimeSeries series = new TimeSeries("rpi " + i, Millisecond.class);
+      final TimeSeries series = new TimeSeries("rpi " + i/*, Millisecond.class*/);
       this.datasets[i] = new TimeSeriesCollection(series);
       final NumberAxis rangeAxis = new NumberAxis("Y" + i);
       rangeAxis.setAutoRangeIncludesZero(false);
@@ -104,14 +109,12 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     //      plot.setAxisOffset(new Spacer(Spacer.ABSOLUTE, 4, 4, 4, 4));
     final ValueAxis axis = plot.getDomainAxis();
     axis.setAutoRange(true);
-    axis.setFixedAutoRange(60000.0);  // 60 seconds
+    axis.setFixedAutoRange(120000.0);  // 60 seconds
 
     final JPanel content = new JPanel(new BorderLayout());
     final ChartPanel chartPanel = new ChartPanel(chart);
     content.add(chartPanel);
     setContentPane(content);
-
-
   }
 
   private void runSpark()
@@ -122,21 +125,21 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
         .set("spark.cassandra.connection.port", "9042")
         .setMaster("local[3]");
     // streaming
-    JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.seconds(1));
+    JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.milliseconds(200));
 
-    //    JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
-    //        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
-    //    );
+    JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
+        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
+    );
 
-    JavaReceiverInputDStream<String> stream = MQTTUtils.createStream(ssc, "tcp://10.99.9.25:1883", "temp/gsr");
-    JavaDStream<ObservationData> mqttStream = stream.map(entry -> entry.split("\\|"))
+    final JavaDStream<ObservationData> mqttStream = MQTTUtils.createStream(ssc, "tcp://192.168.1.32:1883", "temp/gsr")
+        .map(entry -> entry.split("\\|"))
         .flatMap((FlatMapFunction<String[], ObservationData>)strings -> {
           int tempAnalog = Integer.parseInt(strings[0]);
           int gsrAnalog = Integer.parseInt(strings[1]);
           long timestamp = Long.parseLong(strings[2]);
           return Arrays.asList(
               new ObservationData("gsr", "analog", timestamp, gsrAnalog),
-              new ObservationData("temp", "analog", timestamp, tempAnalog)
+              computeTemperature(tempAnalog, timestamp)
           );
         });
 
@@ -146,40 +149,87 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     //// compute Muse FP arousal and valence
     //JavaDStream<ObservationData> eegArousalAndValenceStream = getMuseArousalValenceDStream(museStream);
 
-    // filter Zephyr ecg
-    //    JavaDStream<ObservationData> filteredZephyrStream = zephyrStream
-    //        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr);
+    //filter Zephyr ecg
+    JavaDStream<ObservationData> union = zephyrStream
+        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr)
+        .filter(e -> "ecg".equals(e.getName()))
+        .union(mqttStream);
 
-    mqttStream.foreachRDD(new Function<JavaRDD<ObservationData>, Void>()
-    {
-      @Override
-      public Void call(JavaRDD<ObservationData> rdd) throws Exception
-      {
-        if (rdd.count() > 0)
+    union
+        //.window(Durations.seconds(5), Durations.seconds(1))
+    //    .transform(new Function<JavaRDD<ObservationData>, JavaRDD<ObservationData>>()
+    //    {
+    //      @Override
+    //      public JavaRDD<ObservationData> call(JavaRDD<ObservationData> rdd) throws Exception
+    //      {
+    //        return rdd.groupBy(ObservationData::getGrouping)
+    //            .mapValues(o -> {
+    //              if (o != null)
+    //              {
+    //                int size = Iterables.size(o);
+    //                if (size > 0)
+    //                {
+    //                  double avgValue = 0;
+    //                  String name1 = null;
+    //                  Long maxTimestamp = 0L;
+    //                  for (ObservationData d : o)
+    //                  {
+    //                    avgValue += d.getValue();
+    //                    if (name1 == null)
+    //                    {
+    //                      name1 = d.getName();
+    //                    }
+    //                    if (d.getTimestamp() > maxTimestamp)
+    //                    {
+    //                      maxTimestamp = d.getTimestamp();
+    //                    }
+    //                  }
+    //                  avgValue /= size;
+    //                  return new ObservationData(
+    //                      name1,
+    //                      "",
+    //                      maxTimestamp,
+    //                      avgValue
+    //                  );
+    //                }
+    //              }
+    //              return null;
+    //            })
+    //            .values();
+    //        return null;
+    //      }
+    //    })
+        .foreachRDD(new Function<JavaRDD<ObservationData>, Void>()
         {
-          List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
-              .groupBy(ObservationData::getGrouping)
-              .collect();
-
-          for (Tuple2<String, Iterable<ObservationData>> t : collect)
+          @Override
+          public Void call(JavaRDD<ObservationData> rdd) throws Exception
           {
-            t._2().forEach(new Consumer<ObservationData>()
+            if (rdd.count() > 0)
             {
-              @Override
-              public void accept(ObservationData o)
+              List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
+                  .groupBy(ObservationData::getGrouping)
+                  .collect();
+
+              for (Tuple2<String, Iterable<ObservationData>> t : collect)
               {
-                final Millisecond now = new Millisecond();
-                System.out.println("Now = " + now.toString());
-                int index = "gsr_analog".equals(t._1()) ? 1 : 0;
-                lastValue[index] = o.getValue();
-                datasets[index].getSeries(0).add(new Millisecond(new Date(o.getTimestamp())), lastValue[index]);
+                t._2().forEach(new Consumer<ObservationData>()
+                {
+                  @Override
+                  public void accept(ObservationData o)
+                  {
+                    if ("ecg".equals(o.getName()) || "gsr".equals(o.getName()) || "temp".equals(o.getName()))
+                    {
+                      int index = t._1().startsWith("temp") ? 0 : t._1().startsWith("gsr") ? 1 : 2;
+                      lastValue[index] = o.getValue();
+                      datasets[index].getSeries(0).add(new Millisecond(new Date(o.getTimestamp())), lastValue[index]);
+                    }
+                  }
+                });
               }
-            });
+            }
+            return null;
           }
-        }
-        return null;
-      }
-    });
+        });
 
     //JavaDStream<ObservationData> zephyrStats = zephyrStream.filter(e -> "ecg".equals(e.getName()))
     //    .transform(rdd -> {
@@ -213,14 +263,14 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     //    });
 
     // Onion of everything!
-//    JavaDStream<ObservationData> union = filteredZephyrStream
+    //    JavaDStream<ObservationData> union = filteredZephyrStream
     //.union(museStream)
     //.union(eegArousalAndValenceStream)
     //.union(zephyrStats)
     ;
-//    CassandraStreamingJavaUtil.javaFunctions(union)
-//        .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
-//        .saveToCassandra();
+    //    CassandraStreamingJavaUtil.javaFunctions(union)
+    //        .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
+    //        .saveToCassandra();
 
     //    JavaDStream<ObservationData> windowDStream = cr.window(Durations.seconds(10), Durations.seconds(2));
     //    zephyrStream.mapToPair((PairFunction<ObservationData, String, ObservationData>)observationData -> new Tuple2<>(observationData.getGrouping(), observationData))
@@ -291,6 +341,55 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     //    });
     ssc.start();
     ssc.awaitTermination();
+  }
+
+  private ObservationData computeTemperature(float tempAnalog, long timestamp)
+  {
+    float Temperature = 0f; //Corporal Temperature
+    float Resistance;  //Resistance of sensor.
+    float voltage = (tempAnalog * m_vcc) / 1023;
+    voltage = voltage / ganancia;
+    // Resistance sensor calculate
+    float aux = (voltage / RefTension) + Rb / (Rb + Ra);
+    Resistance = Rc * aux / (1 - aux);
+    if (Resistance >= 1822.8)
+    {
+      // if temperature between 25ºC and 29.9ºC. R(tª)=6638.20457*(0.95768)^t
+      Temperature = (float)(Math.log(Resistance / 6638.20457) / Math.log(0.95768));
+    }
+    else
+    {
+      if (Resistance >= 1477.1)
+      {
+        // if temperature between 30ºC and 34.9ºC. R(tª)=6403.49306*(0.95883)^t
+        Temperature = (float)(Math.log(Resistance / 6403.49306) / Math.log(0.95883));
+      }
+      else
+      {
+        if (Resistance >= 1204.8)
+        {
+          // if temperature between 35ºC and 39.9ºC. R(tª)=6118.01620*(0.96008)^t
+          Temperature = (float)(Math.log(Resistance / 6118.01620) / Math.log(0.96008));
+        }
+        else
+        {
+          if (Resistance >= 988.1)
+          {
+            // if temperature between 40ºC and 44.9ºC. R(tª)=5859.06368*(0.96112)^t
+            Temperature = (float)(Math.log(Resistance / 5859.06368) / Math.log(0.96112));
+          }
+          else
+          {
+            if (Resistance >= 811.7)
+            {
+              // if temperature between 45ºC and 50ºC. R(tª)=5575.94572*(0.96218)^t
+              Temperature = (float)(Math.log(Resistance / 5575.94572) / Math.log(0.96218));
+            }
+          }
+        }
+      }
+    }
+    return new ObservationData("temp", "celsius", timestamp, Temperature);
   }
 
   private JavaDStream<ObservationData> getMuseArousalValenceDStream(JavaDStream<ObservationData> museStream)
