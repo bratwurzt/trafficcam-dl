@@ -90,6 +90,11 @@ public class ObservationData implements Serializable
     return MessageFormat.format("Observation'{'name=''{0}'', timestamp={1}, unit=''{2}'', value=''{3}'''}'", getName(), getTimestamp(), getUnit(), getValue());
   }
 
+  public void setValue(double value)
+  {
+    m_value = value;
+  }
+
   public long getContentSize()
   {
     return (long)hashCode();

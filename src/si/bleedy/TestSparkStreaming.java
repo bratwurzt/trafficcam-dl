@@ -1,7 +1,6 @@
 package si.bleedy;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
+import java.awt.*;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
@@ -9,10 +8,12 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.function.Consumer;
-import javax.swing.JPanel;
+import javax.swing.*;
 
-import com.google.common.collect.Iterables;
-import eu.fistar.sdcs.runnable.IOTTCPReceiver;
+import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.transform.DftNormalization;
+import org.apache.commons.math3.transform.FastFourierTransformer;
+import org.apache.commons.math3.transform.TransformType;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
@@ -20,7 +21,6 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
@@ -39,6 +39,8 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
+import com.google.common.collect.Iterables;
+
 import scala.Tuple2;
 import si.bleedy.data.ObservationData;
 
@@ -50,7 +52,7 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
   private static final long serialVersionUID = -4289949126909167376L;
   private static final Logger LOG = Logger.getLogger(TestSparkStreaming.class);
   //private float m_vcc = 3.3f;
-  private float m_vcc = 5.0f, ganancia = 5.0f, RefTension = 3.0f, Ra = 4640.0f, Rc = 4719.0f, Rb = 810.0f;
+  private float m_vcc = 3.3f, ganancia = 5.0f, RefTension = 3.0f, Ra = 4640.0f, Rc = 4719.0f, Rb = 786.0f;
 
   static
   {
@@ -61,7 +63,7 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
   /**
    * The number of subplots.
    */
-  public static final int SUBPLOT_COUNT = 3;
+  public static final int SUBPLOT_COUNT = 2;
 
   /**
    * The datasets.
@@ -109,7 +111,7 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     //      plot.setAxisOffset(new Spacer(Spacer.ABSOLUTE, 4, 4, 4, 4));
     final ValueAxis axis = plot.getDomainAxis();
     axis.setAutoRange(true);
-    axis.setFixedAutoRange(120000.0);  // 60 seconds
+    axis.setFixedAutoRange(240000.0);  // 60 seconds
 
     final JPanel content = new JPanel(new BorderLayout());
     final ChartPanel chartPanel = new ChartPanel(chart);
@@ -125,24 +127,24 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
         .set("spark.cassandra.connection.port", "9042")
         .setMaster("local[3]");
     // streaming
-    JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.milliseconds(200));
+    JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.milliseconds(1000));
 
-    JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
-        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
-    );
+//    JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
+//        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
+//    );
 
-    final JavaDStream<ObservationData> mqttStream = MQTTUtils.createStream(ssc, "tcp://192.168.1.32:1883", "temp/gsr")
+    final JavaDStream<ObservationData> mqttStream = MQTTUtils.createStream(ssc, "tcp://10.99.9.25:1883", "temp/gsr")
         .map(entry -> entry.split("\\|"))
         .flatMap((FlatMapFunction<String[], ObservationData>)strings -> {
           int tempAnalog = Integer.parseInt(strings[0]);
           int gsrAnalog = Integer.parseInt(strings[1]);
           long timestamp = Long.parseLong(strings[2]);
           return Arrays.asList(
-              new ObservationData("gsr", "analog", timestamp, gsrAnalog),
+              computeResistance(gsrAnalog, timestamp),
               computeTemperature(tempAnalog, timestamp)
           );
         });
-
+    final FastFourierTransformer transformer = new FastFourierTransformer(DftNormalization.STANDARD);
     //JavaDStream<ObservationData> museStream = ssc.receiverStream(
     //    new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8100)
     //);
@@ -150,55 +152,61 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     //JavaDStream<ObservationData> eegArousalAndValenceStream = getMuseArousalValenceDStream(museStream);
 
     //filter Zephyr ecg
-    JavaDStream<ObservationData> union = zephyrStream
-        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr)
-        .filter(e -> "ecg".equals(e.getName()))
-        .union(mqttStream);
+//    JavaDStream<ObservationData> union = zephyrStream
+//        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr)
+//        .filter(e -> "ecg".equals(e.getName()))
+//        .union(mqttStream);
 
-    union
-        //.window(Durations.seconds(5), Durations.seconds(1))
-    //    .transform(new Function<JavaRDD<ObservationData>, JavaRDD<ObservationData>>()
-    //    {
-    //      @Override
-    //      public JavaRDD<ObservationData> call(JavaRDD<ObservationData> rdd) throws Exception
-    //      {
-    //        return rdd.groupBy(ObservationData::getGrouping)
-    //            .mapValues(o -> {
-    //              if (o != null)
-    //              {
-    //                int size = Iterables.size(o);
-    //                if (size > 0)
-    //                {
-    //                  double avgValue = 0;
-    //                  String name1 = null;
-    //                  Long maxTimestamp = 0L;
-    //                  for (ObservationData d : o)
-    //                  {
-    //                    avgValue += d.getValue();
-    //                    if (name1 == null)
-    //                    {
-    //                      name1 = d.getName();
-    //                    }
-    //                    if (d.getTimestamp() > maxTimestamp)
-    //                    {
-    //                      maxTimestamp = d.getTimestamp();
-    //                    }
-    //                  }
-    //                  avgValue /= size;
-    //                  return new ObservationData(
-    //                      name1,
-    //                      "",
-    //                      maxTimestamp,
-    //                      avgValue
-    //                  );
-    //                }
-    //              }
-    //              return null;
-    //            })
-    //            .values();
-    //        return null;
-    //      }
-    //    })
+    mqttStream
+//        .window(Durations.milliseconds(1000), Durations.milliseconds(1000))
+        .transform(new Function2<JavaRDD<ObservationData>, Time, JavaRDD<ObservationData>>()  // mean over last 5 seconds
+        {
+          private static final long serialVersionUID = 5455964470681463716L;
+
+          @Override
+          public JavaRDD<ObservationData> call(JavaRDD<ObservationData> rdd, Time time) throws Exception
+          {
+            if (rdd != null && rdd.count() > 0)
+            {
+              return rdd.sortBy((Function<ObservationData, Long>)ObservationData::getTimestamp, false, 2)
+                  .groupBy(ObservationData::getName)
+                  .mapValues(o -> {
+                    if (o != null)
+                    {
+                      int size = Iterables.size(o);
+                      if (size > 0)
+                      {
+                        double avgValue = 0;
+                        String name1 = null;
+                        Long maxTimestamp = 0L;
+                        for (ObservationData d : o)
+                        {
+                          avgValue += d.getValue();
+                          if (name1 == null)
+                          {
+                            name1 = d.getName();
+                          }
+                          if (d.getTimestamp() > maxTimestamp)
+                          {
+                            maxTimestamp = d.getTimestamp();
+                          }
+                        }
+                        avgValue /= size;
+                        return new ObservationData(
+                            name1,
+                            "",
+                            maxTimestamp,
+                            avgValue
+                        );
+                      }
+                    }
+                    return null;
+                  })
+                  .values();
+            }
+            return rdd;
+          }
+        })
         .foreachRDD(new Function<JavaRDD<ObservationData>, Void>()
         {
           @Override
@@ -230,6 +238,7 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
             return null;
           }
         });
+
 
     //JavaDStream<ObservationData> zephyrStats = zephyrStream.filter(e -> "ecg".equals(e.getName()))
     //    .transform(rdd -> {
@@ -343,6 +352,13 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     ssc.awaitTermination();
   }
 
+  private ObservationData computeResistance(int gsrAnalog, long timestamp)
+  {
+    float voltage = (gsrAnalog * m_vcc) / 1023;
+    double conductance = 2*((voltage - 0.5) / 100000);
+    return new ObservationData("gsr", "resistance", timestamp, conductance);
+  }
+
   private ObservationData computeTemperature(float tempAnalog, long timestamp)
   {
     float Temperature = 0f; //Corporal Temperature
@@ -391,6 +407,71 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     }
     return new ObservationData("temp", "celsius", timestamp, Temperature);
   }
+
+  private double[] applyBandStopFFT(double input[])
+  {
+    //fft works on data length = some power of two
+    int fftLength;
+    int length = input.length;  //initialized with input's length
+    int power = 0;
+    while (true)
+    {
+      int powOfTwo = (int)Math.pow(2, power);  //maximum no. of values to be applied fft on
+
+      if (powOfTwo == length)
+      {
+        fftLength = powOfTwo;
+        break;
+      }
+      if (powOfTwo > length)
+      {
+        fftLength = (int)Math.pow(2, (power - 1));
+        break;
+      }
+      power++;
+    }
+
+    double[] tempInput = Arrays.copyOf(input, fftLength);
+
+    //hanning window
+    for (int i = 0; i < tempInput.length; i++)
+    {
+      tempInput[i] *= 0.5 * (1 - Math.cos((2 * Math.PI * i) / (tempInput.length - 1)));
+    }
+
+    FastFourierTransformer fft = new FastFourierTransformer(DftNormalization.STANDARD);
+    //apply fft on input
+    Complex[] complexTransInput = fft.transform(tempInput, TransformType.FORWARD);
+
+    float bandstop = 50f;
+    float sampleRate = 100f;
+    float fftSize = tempInput.length;
+
+    for (int i = 0; i < complexTransInput.length; i++)
+    {
+      double real = (complexTransInput[i].getReal());
+      double img = (complexTransInput[i].getImaginary());
+
+      float frequency = i * sampleRate / fftSize;
+      if (frequency > bandstop - 1 && frequency < bandstop + 1)
+      {
+        tempInput[i] = 0;
+      }
+      else
+      {
+        tempInput[i] = Math.sqrt((real * real) + (img * img));
+      }
+    }
+    Complex[] inverseTransform = fft.transform(tempInput, TransformType.INVERSE);
+    for (int i = 0; i < inverseTransform.length; i++)
+    {
+      double real = (inverseTransform[i].getReal());
+      double img = (inverseTransform[i].getImaginary());
+      tempInput[i] = Math.sqrt((real * real) + (img * img));
+    }
+    return tempInput;
+  }
+
 
   private JavaDStream<ObservationData> getMuseArousalValenceDStream(JavaDStream<ObservationData> museStream)
   {

@@ -69,9 +69,21 @@ public class SparkSaveStreaming extends JPanel implements Serializable
     JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
         new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
     );
+//    mqttStream.foreachRDD(new Function<JavaRDD<ObservationData>, Void>()
+//    {
+//      @Override
+//      public Void call(JavaRDD<ObservationData> rdd) throws Exception
+//      {
+//        List<ObservationData> collect = rdd.collect();
+//        return null;
+//      }
+//    });
+//    JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
+//        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
+//    );
     // filter Zephyr ecg
-    JavaDStream<ObservationData> filteredZephyrStream = zephyrStream
-        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr);
+//    JavaDStream<ObservationData> filteredZephyrStream = zephyrStream
+//        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr);
 
     //    zephyrStream.filter(e -> "ecg".equals(e.getName()))
     //        .foreachRDD((Function2<JavaRDD<ObservationData>, Time, Void>)(rdd, time) -> {
@@ -87,9 +99,10 @@ public class SparkSaveStreaming extends JPanel implements Serializable
     //        });
 
     // Onion of everything!
-    JavaDStream<ObservationData> union = filteredZephyrStream
-        .union(mqttStream);
-    CassandraStreamingJavaUtil.javaFunctions(union)
+//    JavaDStream<ObservationData> union = filteredZephyrStream
+//        .union(mqttStream)
+//        ;
+    CassandraStreamingJavaUtil.javaFunctions(mqttStream)
         .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
         .saveToCassandra();
 
