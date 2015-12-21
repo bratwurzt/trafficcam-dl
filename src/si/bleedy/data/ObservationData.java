@@ -24,7 +24,14 @@ public class ObservationData implements Serializable
     {
       m_value *= -1;
     }
-    //m_value *= 0.013405;
+    //if ("gsr".equals(m_name))
+    //{
+    //  m_value *= 1000000;
+    //}
+    //else if ("temp".equals(m_name))
+    //{
+    //  m_value /= 10;
+    //}
   }
 
   public ObservationData(String name, String unit, Long timestamp, double value)

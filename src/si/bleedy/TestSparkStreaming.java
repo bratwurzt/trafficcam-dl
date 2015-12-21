@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import javax.swing.*;
 
+import eu.fistar.sdcs.runnable.IOTTCPReceiver;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
@@ -21,6 +22,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
@@ -52,7 +54,8 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
   private static final long serialVersionUID = -4289949126909167376L;
   private static final Logger LOG = Logger.getLogger(TestSparkStreaming.class);
   //private float m_vcc = 3.3f;
-  private float m_vcc = 3.3f, ganancia = 5.0f, RefTension = 3.0f, Ra = 4640.0f, Rc = 4719.0f, Rb = 786.0f;
+  //private float m_vcc = 5.0f, ganancia = 5.0f, RefTension = 2.98f, Ra = 2985.0f, Rc = 2995.0f, Rb = 698.0f;
+  private float m_vcc = 5.0f, ganancia = 5.0f, RefTension = 2.98f, Ra = 4640.0f, Rc = 4719.0f, Rb = 698.0f;
 
   static
   {
@@ -63,7 +66,7 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
   /**
    * The number of subplots.
    */
-  public static final int SUBPLOT_COUNT = 2;
+  public static final int SUBPLOT_COUNT = 5;
 
   /**
    * The datasets.
@@ -99,7 +102,7 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
       plot.add(subplot);
     }
 
-    final JFreeChart chart = new JFreeChart("Dynamic Data Demo 3", plot);
+    final JFreeChart chart = new JFreeChart("Spark stream demo", plot);
     //        chart.getLegend().setAnchor(Legend.EAST);
     chart.setBorderPaint(Color.black);
     chart.setBorderVisible(true);
@@ -129,36 +132,32 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     // streaming
     JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.milliseconds(1000));
 
-//    JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
-//        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
-//    );
+    JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
+        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
+    );
 
-    final JavaDStream<ObservationData> mqttStream = MQTTUtils.createStream(ssc, "tcp://10.99.9.25:1883", "temp/gsr")
+    final JavaDStream<ObservationData> mqttStream = MQTTUtils.createStream(ssc, "tcp://192.168.1.33:1883", "temp/gsr")
         .map(entry -> entry.split("\\|"))
         .flatMap((FlatMapFunction<String[], ObservationData>)strings -> {
           int tempAnalog = Integer.parseInt(strings[0]);
           int gsrAnalog = Integer.parseInt(strings[1]);
           long timestamp = Long.parseLong(strings[2]);
           return Arrays.asList(
-              computeResistance(gsrAnalog, timestamp),
-              computeTemperature(tempAnalog, timestamp)
+              //computeConductance(gsrAnalog, timestamp),
+              //computeTemperature(tempAnalog, timestamp)
+              new ObservationData("temp", "mV", timestamp, getVoltage(tempAnalog)),
+              new ObservationData("gsr", "mV", timestamp, getVoltage(gsrAnalog))
           );
         });
-    final FastFourierTransformer transformer = new FastFourierTransformer(DftNormalization.STANDARD);
+    //final FastFourierTransformer transformer = new FastFourierTransformer(DftNormalization.STANDARD);
     //JavaDStream<ObservationData> museStream = ssc.receiverStream(
     //    new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8100)
     //);
     //// compute Muse FP arousal and valence
     //JavaDStream<ObservationData> eegArousalAndValenceStream = getMuseArousalValenceDStream(museStream);
 
-    //filter Zephyr ecg
-//    JavaDStream<ObservationData> union = zephyrStream
-//        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr)
-//        .filter(e -> "ecg".equals(e.getName()))
-//        .union(mqttStream);
-
     mqttStream
-//        .window(Durations.milliseconds(1000), Durations.milliseconds(1000))
+        //.window(Durations.milliseconds(200), Durations.milliseconds(100))
         .transform(new Function2<JavaRDD<ObservationData>, Time, JavaRDD<ObservationData>>()  // mean over last 5 seconds
         {
           private static final long serialVersionUID = 5455964470681463716L;
@@ -168,78 +167,56 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
           {
             if (rdd != null && rdd.count() > 0)
             {
-              return rdd.sortBy((Function<ObservationData, Long>)ObservationData::getTimestamp, false, 2)
-                  .groupBy(ObservationData::getName)
-                  .mapValues(o -> {
-                    if (o != null)
-                    {
-                      int size = Iterables.size(o);
-                      if (size > 0)
-                      {
-                        double avgValue = 0;
-                        String name1 = null;
-                        Long maxTimestamp = 0L;
-                        for (ObservationData d : o)
-                        {
-                          avgValue += d.getValue();
-                          if (name1 == null)
-                          {
-                            name1 = d.getName();
-                          }
-                          if (d.getTimestamp() > maxTimestamp)
-                          {
-                            maxTimestamp = d.getTimestamp();
-                          }
-                        }
-                        avgValue /= size;
-                        return new ObservationData(
-                            name1,
-                            "",
-                            maxTimestamp,
-                            avgValue
-                        );
-                      }
-                    }
-                    return null;
-                  })
-                  .values();
+              return getRollingMeanJavaRDD(rdd);
             }
             return rdd;
           }
         })
-        .foreachRDD(new Function<JavaRDD<ObservationData>, Void>()
+        ;
+
+    //filter Zephyr
+    JavaDStream<ObservationData> union = zephyrStream
+        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr)
+        .union(mqttStream)
+        ;
+    union.foreachRDD(new Function<JavaRDD<ObservationData>, Void>()
+    {
+      @Override
+      public Void call(JavaRDD<ObservationData> rdd) throws Exception
+      {
+        if (rdd != null && rdd.count() > 0)
         {
-          @Override
-          public Void call(JavaRDD<ObservationData> rdd) throws Exception
+          List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
+              .groupBy(ObservationData::getGrouping)
+              .collect();
+
+          for (Tuple2<String, Iterable<ObservationData>> t : collect)
           {
-            if (rdd.count() > 0)
+            t._2().forEach(new Consumer<ObservationData>()
             {
-              List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
-                  .groupBy(ObservationData::getGrouping)
-                  .collect();
-
-              for (Tuple2<String, Iterable<ObservationData>> t : collect)
+              @Override
+              public void accept(ObservationData o)
               {
-                t._2().forEach(new Consumer<ObservationData>()
+                int index = getIndex(t._1());
+                if (index >= 0)
                 {
-                  @Override
-                  public void accept(ObservationData o)
+                  try
                   {
-                    if ("ecg".equals(o.getName()) || "gsr".equals(o.getName()) || "temp".equals(o.getName()))
-                    {
-                      int index = t._1().startsWith("temp") ? 0 : t._1().startsWith("gsr") ? 1 : 2;
-                      lastValue[index] = o.getValue();
-                      datasets[index].getSeries(0).add(new Millisecond(new Date(o.getTimestamp())), lastValue[index]);
-                    }
+                    lastValue[index] = o.getValue();
+                    datasets[index].getSeries(0).add(new Millisecond(new Date(o.getTimestamp())), lastValue[index]);
                   }
-                });
+                  catch (Exception e)
+                  {
+                    e.printStackTrace();
+                  }
+                }
               }
-            }
-            return null;
+            });
           }
-        });
-
-
+        }
+        return null;
+      }
+    });
     //JavaDStream<ObservationData> zephyrStats = zephyrStream.filter(e -> "ecg".equals(e.getName()))
     //    .transform(rdd -> {
     //      try
@@ -352,18 +329,87 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     ssc.awaitTermination();
   }
 
-  private ObservationData computeResistance(int gsrAnalog, long timestamp)
+  private int getIndex(String name)
   {
-    float voltage = (gsrAnalog * m_vcc) / 1023;
-    double conductance = 2*((voltage - 0.5) / 100000);
+    switch (name)
+    {
+      case "temp_mV":
+        return 0;
+      case "gsr_mV":
+        return 1;
+      case "acc_x":
+        return 2;
+      case "acc_y":
+        return 3;
+      case "acc_z":
+        return 4;
+      //case "ecg_mV":
+      //  return 5;
+      default:
+        return -1;
+    }
+  }
+
+  private JavaRDD<ObservationData> getRollingMeanJavaRDD(JavaRDD<ObservationData> rdd)
+  {
+    return rdd.sortBy((Function<ObservationData, Long>)ObservationData::getTimestamp, false, 2)
+        .groupBy(ObservationData::getName)
+        .mapValues(o -> {
+          if (o != null)
+          {
+            int size = Iterables.size(o);
+            if (size > 0)
+            {
+              double avgValue = 0;
+              String name1 = null;
+              Long maxTimestamp = 0L, minTimestamp = Long.MAX_VALUE;
+              for (ObservationData d : o)
+              {
+                avgValue += d.getValue();
+                if (name1 == null)
+                {
+                  name1 = d.getName();
+                }
+                if (d.getTimestamp() > maxTimestamp)
+                {
+                  maxTimestamp = d.getTimestamp();
+                }
+                if (d.getTimestamp() < minTimestamp)
+                {
+                  minTimestamp = d.getTimestamp();
+                }
+              }
+              avgValue /= size;
+              return new ObservationData(
+                  name1,
+                  "",
+                  (maxTimestamp + minTimestamp) / 2,
+                  avgValue
+              );
+            }
+          }
+          return null;
+        })
+        .values();
+  }
+
+  private ObservationData computeConductance(int gsrAnalog, long timestamp)
+  {
+    float voltage = getVoltage(gsrAnalog);
+    double conductance = 2*((voltage - 0.497) / 100000);
     return new ObservationData("gsr", "resistance", timestamp, conductance);
   }
 
-  private ObservationData computeTemperature(float tempAnalog, long timestamp)
+  private float getVoltage(int analogValue)
+  {
+    return (analogValue * m_vcc) / 1023;
+  }
+
+  private ObservationData computeTemperature(int tempAnalog, long timestamp)
   {
     float Temperature = 0f; //Corporal Temperature
     float Resistance;  //Resistance of sensor.
-    float voltage = (tempAnalog * m_vcc) / 1023;
+    float voltage = getVoltage(tempAnalog);
     voltage = voltage / ganancia;
     // Resistance sensor calculate
     float aux = (voltage / RefTension) + Rb / (Rb + Ra);
@@ -654,24 +700,24 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
         });
   }
 
-  private int getIndex(String s)
-  {
-    switch (s)
-    {
-      case "ALPHA_ABSOLUTE_FP1":
-        return 0;
-      case "ALPHA_ABSOLUTE_FP2":
-        return 1;
-      case "BETA_ABSOLUTE_FP1":
-        return 2;
-      case "BETA_ABSOLUTE_FP2":
-        return 3;
-      default:
-        break;
-    }
-
-    return 0;
-  }
+  //private int getIndex(String s)
+  //{
+  //  switch (s)
+  //  {
+  //    case "ALPHA_ABSOLUTE_FP1":
+  //      return 0;
+  //    case "ALPHA_ABSOLUTE_FP2":
+  //      return 1;
+  //    case "BETA_ABSOLUTE_FP1":
+  //      return 2;
+  //    case "BETA_ABSOLUTE_FP2":
+  //      return 3;
+  //    default:
+  //      break;
+  //  }
+  //
+  //  return 0;
+  //}
 
   public static void main(String[] args)
   {

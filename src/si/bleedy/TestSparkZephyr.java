@@ -54,20 +54,20 @@ public class TestSparkZephyr extends ApplicationFrame
     CassandraTableScanJavaRDD<CassandraRow> cassandraRowsRDD = CassandraJavaUtil.javaFunctions(sc)
         .cassandraTable("obskeyspace", "observations");
     SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-    long startTime = dateFormat.parse("17.12.2015 20:28").getTime();
-    long endTime = dateFormat.parse("16.12.2015 04:01").getTime();
+    long startTime = dateFormat.parse("21.12.2015 03:20").getTime();
+    long endTime = dateFormat.parse("21.12.2015 04:20").getTime();
     Map<String, Iterable<ObservationData>> map = cassandraRowsRDD
         .where("timestamp > ?", startTime)
-//        .where("timestamp < ?", endTime)
-        .where("name in (?,?,?)", "gsr", "temp", "ecg")
-//        .where("name = ?", "analog")
+        .where("timestamp < ?", endTime)
+//        .where("name in (?,?)", "gsr", "sleep")
+//        .where("name = ?", "acc")
         .map(CassandraRow::toMap)
         .map(entry -> new ObservationData(
             (String)entry.get("name"),
             (String)entry.get("unit"),
             (long)entry.get("timestamp"),
             (String)entry.get("value")))
-//            .filter(ObservationData::filter)
+            //.filter(ObservationData::filter)
         .groupBy(ObservationData::getGrouping)
         .collectAsMap();
 
@@ -77,8 +77,15 @@ public class TestSparkZephyr extends ApplicationFrame
     for (Map.Entry<String, Iterable<ObservationData>> entry : map.entrySet())
     {
       final TimeSeries series = new TimeSeries(entry.getKey());
-      StreamSupport.stream(entry.getValue().spliterator(), false)
-          .forEach(data -> series.add(new Millisecond(new Date(data.getTimestamp())), data.getValue()));
+      try
+      {
+        StreamSupport.stream(entry.getValue().spliterator(), false)
+            .forEach(data -> series.add(new Millisecond(new Date(data.getTimestamp())), data.getValue()));
+      }
+      catch (Exception e)
+      {
+        e.printStackTrace();
+      }
 
       timeseries.add(series);
     }
