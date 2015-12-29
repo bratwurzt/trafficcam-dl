@@ -1,12 +1,9 @@
 package triggers;
 
 import java.io.InputStream;
-import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
@@ -20,7 +17,6 @@ import org.apache.cassandra.db.Cell;
 import org.apache.cassandra.db.ColumnFamily;
 import org.apache.cassandra.db.Mutation;
 import org.apache.cassandra.db.composites.CellName;
-import org.apache.cassandra.db.marshal.AbstractType;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.triggers.ITrigger;
 import org.slf4j.Logger;
@@ -34,18 +30,18 @@ import eu.fistar.sdcs.pa.ZephyrProtos;
 public class InsertTrigger implements ITrigger
 {
   private static final Logger LOG = LoggerFactory.getLogger(InsertTrigger.class);
-  public static int BATCH_TIME = 1000;
   protected final BlockingQueue<ZephyrProtos.ObservationPB> m_observations;
   protected final Map<Long, Map<String, ZephyrProtos.ObservationPB.Builder>> m_map = new ConcurrentHashMap<>();
   protected ExecutorService m_queryThreadExecutor = Executors.newSingleThreadExecutor();
-  private Long m_lastTime;
   private Properties m_properties = loadProperties();
-  private Socket m_socket;
+  public static XORShiftRandom XOR_SHIFT_RANDOM = new XORShiftRandom();
 
   public InsertTrigger()
   {
     m_observations = new LinkedBlockingQueue<>();
-    m_lastTime = System.currentTimeMillis();
+    String ipAddress = m_properties.getProperty("ip.address");
+    Integer port = Integer.parseInt(m_properties.getProperty("ip.port"));
+    new Thread(new RemoteClientSaveWorker(m_observations, ipAddress, port)).start();
   }
 
   @Override
@@ -65,14 +61,14 @@ public class InsertTrigger implements ITrigger
         Long key = Long.valueOf(split[0]);
         String columnName;
 
-        if (split.length == 2 && (columnName = split[1]) != null && columnName.length() > 0)
+        if (split.length == 2 && (columnName = split[1]) != null && columnName.length() > 0 && value != null)
         {
           if (!m_map.containsKey(key))
           {
             m_map.put(key, new ConcurrentHashMap<>());
           }
 
-          if (!m_map.get(key).containsKey(localKey))
+          if (!m_map.get(key).containsKey(localKey) || m_map.get(key).get(localKey) == null)
           {
             ZephyrProtos.ObservationPB.Builder newBuilder = ZephyrProtos.ObservationPB.newBuilder();
             newBuilder.setName(localKey);
@@ -91,36 +87,17 @@ public class InsertTrigger implements ITrigger
               break;
           }
 
+//          LOG.info("Cell localKey=" + localKey + ", name=" + name  + ", key=" + key + ", value=" + value);
           if (builder.hasName() && builder.hasTime() && builder.hasUnit() && builder.getValuesCount() > 0)
           {
-            ZephyrProtos.ObservationPB build = builder.build();
+//            LOG.info("Sending " + builder.getName() + ", " + builder.getUnit() + ", " + builder.getTime() + ", " + builder.getValues(0));
 
-            synchronized (m_observations)
-            {
-              m_observations.put(build);
-            }
             m_map.get(key).remove(localKey);
+            m_observations.put(builder.build());
+//            m_queryThreadExecutor.execute(new RemoteClientSaveWorker(builder.build(), ipAddress, port));
           }
         }
-//        LOG.info("Cell key=" + localKey + ", name=" + name + ", value=" + value);
-      }
 
-      if (m_observations.size() >= 500)
-      {
-        LOG.info("Sending " + m_observations.size() + " protobuffers.");
-        sendData();
-        m_lastTime = System.currentTimeMillis();
-      }
-
-      if (m_observations.size() >= 50000)
-      {
-        synchronized (m_observations)
-        {
-          while(m_observations.size()>= 50000)
-          {
-            m_observations.peek();
-          }
-        }
       }
     }
     catch (Exception e)
@@ -128,13 +105,6 @@ public class InsertTrigger implements ITrigger
       LOG.error("Error: ", e);
     }
     return null;
-  }
-
-  private void sendData()
-  {
-    String ipAddress = m_properties.getProperty("ip.address");
-    Integer port = Integer.parseInt(m_properties.getProperty("ip.port"));
-    m_queryThreadExecutor.execute(new RemoteClientSaveWorker(m_observations, m_socket, ipAddress, port));
   }
 
   private static Properties loadProperties()

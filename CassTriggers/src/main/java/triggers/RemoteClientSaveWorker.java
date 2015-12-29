@@ -1,13 +1,19 @@
 package triggers;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.util.Enumeration;
 import java.util.concurrent.BlockingQueue;
 import javax.net.SocketFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import eu.fistar.sdcs.pa.ZephyrProtos;
 
@@ -16,16 +22,14 @@ import eu.fistar.sdcs.pa.ZephyrProtos;
  */
 public class RemoteClientSaveWorker implements Runnable
 {
-  private Socket m_socket;
+  private static final Logger LOG = LoggerFactory.getLogger(RemoteClientSaveWorker.class);
   private String m_ipAddress;
   private Integer m_port;
   protected final BlockingQueue<ZephyrProtos.ObservationPB> m_observations;
-  protected OutputStream m_outputStream;
 
-  public RemoteClientSaveWorker(BlockingQueue<ZephyrProtos.ObservationPB> observations, Socket socket, String ipAddress, Integer port)
+  public RemoteClientSaveWorker(BlockingQueue<ZephyrProtos.ObservationPB> obs, String ipAddress, Integer port)
   {
-    m_observations = observations;
-    m_socket = socket;
+    m_observations = obs;
     m_ipAddress = ipAddress;
     m_port = port;
   }
@@ -33,90 +37,51 @@ public class RemoteClientSaveWorker implements Runnable
   @Override
   public void run()
   {
-    try
+    while(true)
     {
-      try (OutputStream outputStream = getOutputStream())
+
+      try
       {
-        ZephyrProtos.ObservationsPB.Builder builder = ZephyrProtos.ObservationsPB.newBuilder();
         synchronized (m_observations)
         {
-          if (m_observations.size() > 0)
+          ZephyrProtos.ObservationPB obs;
+          while ((obs = m_observations.poll()) != null)
           {
-            synchronized (m_observations)
-            {
-              builder.addAllObservations(m_observations);
-            }
+            tempList.add(obs);
+            builder.addObservations(
+                ZephyrProtos.ObservationPB.newBuilder()
+                    .setName(obs.getPropertyName())
+                    .setUnit(obs.getMeasurementUnit())
+                    .setTime(obs.getPhenomenonTime())
+                    .setDuration((int)obs.getDuration())
+                    .addAllValues(obs.getValues())
+            );
           }
         }
 
-        builder.build().writeTo(outputStream);
-      }
-      catch (Exception e)
-      {
-        return;
-      }
-      finally
-      {
-        if (m_outputStream != null)
-        {
-          m_outputStream.close();
-        }
-      }
 
-      synchronized (m_observations)
-      {
-        m_observations.clear();
-      }
-    }
-    catch (Exception e)
-    {
-      e.printStackTrace();
-    }
-  }
-
-  public OutputStream getOutputStream() throws IOException
-  {
-    if (m_outputStream == null)
-    {
-      if (m_socket == null/* || !m_socket.isConnected() || m_socket.isClosed()*/)
-      {
+        int localPort = InsertTrigger.XOR_SHIFT_RANDOM.nextInt(49152, 55535);
+        DatagramSocket datagramSocket = new DatagramSocket(localPort);
         try
         {
-          m_socket = createSocket(m_port, m_ipAddress);
+          ByteArrayOutputStream output = new ByteArrayOutputStream(64);
+          m_build.writeDelimitedTo(output);
+          byte buffer[] = output.toByteArray();
+          InetAddress ipAddressInet = InetAddress.getByName(m_ipAddress);
+          DatagramPacket packet = new DatagramPacket(buffer, buffer.length, ipAddressInet, m_port);
+          datagramSocket.send(packet);
         }
-        catch (IOException e)
+        finally
         {
-          e.printStackTrace();
+          datagramSocket.disconnect();
+          datagramSocket.close();
         }
       }
-
-      m_outputStream = m_socket.getOutputStream();
-    }
-    return m_outputStream;
-  }
-
-  private Socket createSocket(int serverPort, String serverIPAddress) throws IOException
-  {
-    XORShiftRandom xorShiftRandom = new XORShiftRandom();
-    int localPort = xorShiftRandom.nextInt(49152, 55535);
-    Enumeration e = NetworkInterface.getNetworkInterfaces();
-    InetAddress localInetAddress = InetAddress.getByName("localhost");
-    outerLoop:
-    while (e.hasMoreElements())
-    {
-      NetworkInterface n = (NetworkInterface)e.nextElement();
-      Enumeration ee = n.getInetAddresses();
-      while (ee.hasMoreElements())
+      catch (IOException e)
       {
-        InetAddress i = (InetAddress)ee.nextElement();
-
-        if (i.isSiteLocalAddress())
-        {
-          localInetAddress = i;
-          break outerLoop;
-        }
+        LOG.error("Error: ", e);
       }
     }
-    return SocketFactory.getDefault().createSocket(InetAddress.getByName(serverIPAddress), serverPort, localInetAddress, localPort);
+
   }
 }

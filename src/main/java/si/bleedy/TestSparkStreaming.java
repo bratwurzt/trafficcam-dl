@@ -44,6 +44,7 @@ import com.google.common.collect.Iterables;
 
 import si.bleedy.data.ObservationData;
 import si.bleedy.runnable.IOTTCPReceiver;
+import si.bleedy.runnable.IOTUDPReceiver;
 
 /**
  * @author bratwurzt
@@ -132,7 +133,7 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.milliseconds(1000));
 
     JavaDStream<ObservationData> cassStream = ssc.receiverStream(
-        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8111)
+        new IOTUDPReceiver(StorageLevel.MEMORY_ONLY(), 8111)
     );
 
 //    final JavaDStream<ObservationData> mqttStream = MQTTUtils.createStream(ssc, "tcp://10.99.9.25:1883", "temp/gsr/ecg/time")

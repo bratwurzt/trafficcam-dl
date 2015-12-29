@@ -49,6 +49,7 @@ import com.google.common.collect.Iterables;
 import scala.Tuple2;
 import si.bleedy.data.ObservationData;
 import si.bleedy.runnable.IOTTCPReceiver;
+import si.bleedy.runnable.IOTUDPReceiver;
 
 /**
  * @author bratwurzt
@@ -62,11 +63,11 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
   private float m_vcc = 5.0f, ganancia = 5.0f, RefTension = 2.98f, Ra = 4640.0f, Rc = 4719.0f, Rb = 698.0f;
   private SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 
-  static
-  {
-    URL url = Thread.currentThread().getContextClassLoader().getResource("config/log4j.properties");
-    PropertyConfigurator.configure(url);
-  }
+//  static
+//  {
+//    URL url = Thread.currentThread().getContextClassLoader().getResource("config/log4j.properties");
+//    PropertyConfigurator.configure(url);
+//  }
 
   /**
    * The number of subplots.
@@ -135,6 +136,7 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
         .set("spark.cassandra.connection.host", "cassandra.marand.si")
         .set("spark.cassandra.connection.port", "9042")
         .setMaster("local[3]");
+
     // streaming
     Duration batchDuration = Durations.seconds(1);
     final JavaStreamingContext ssc = new JavaStreamingContext(conf, batchDuration);
@@ -149,13 +151,13 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
         .saveToCassandra();
 
     JavaDStream<ObservationData> cassStream = ssc.receiverStream(
-        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8111)
+        new IOTUDPReceiver(StorageLevel.MEMORY_ONLY(), 8111)
     );
 
     cassStream.foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
       if (rdd != null && rdd.count() > 0)
       {
-        List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
+        List<Tuple2<String, Iterable<ObservationData>>> collect = rdd.distinct()
             .groupBy(ObservationData::getGrouping)
             .collect();
 
