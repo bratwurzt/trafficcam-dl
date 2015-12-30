@@ -91,6 +91,11 @@ public class ObservationData implements Serializable
     return !"ecg".equals(getName()) || getValue() < 1000;
   }
 
+  public Boolean filterEcgZephyr()
+  {
+    return "ecg".equals(getName()) && getValue() < 1000;
+  }
+
   @Override
   public String toString()
   {
@@ -105,5 +110,17 @@ public class ObservationData implements Serializable
   public long getContentSize()
   {
     return (long)hashCode();
+  }
+
+  public static int getIndex(String[] plotNames, String name)
+  {
+    for (int i = 0; i < plotNames.length; i++)
+    {
+       if (name.equals(plotNames[i]))
+       {
+         return i;
+       }
+    }
+    return -1;
   }
 }

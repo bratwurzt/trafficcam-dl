@@ -4,13 +4,10 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.cassandra.config.CFMetaData;
 import org.apache.cassandra.db.Cell;
@@ -22,6 +19,7 @@ import org.apache.cassandra.triggers.ITrigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import data.PriorityBlockingDeque;
 import eu.fistar.sdcs.pa.ZephyrProtos;
 
 /**
@@ -30,17 +28,22 @@ import eu.fistar.sdcs.pa.ZephyrProtos;
 public class InsertTrigger implements ITrigger
 {
   private static final Logger LOG = LoggerFactory.getLogger(InsertTrigger.class);
-  protected final BlockingQueue<ZephyrProtos.ObservationPB> m_observations;
+  public static int BATCH_MILLIS = 1000;
+  protected final PriorityBlockingDeque<ZephyrProtos.ObservationPB> m_observations;
   protected final Map<Long, Map<String, ZephyrProtos.ObservationPB.Builder>> m_map = new ConcurrentHashMap<>();
-  protected ExecutorService m_queryThreadExecutor = Executors.newSingleThreadExecutor();
   private Properties m_properties = loadProperties();
   public static XORShiftRandom XOR_SHIFT_RANDOM = new XORShiftRandom();
 
   public InsertTrigger()
   {
-    m_observations = new LinkedBlockingQueue<>();
     String ipAddress = m_properties.getProperty("ip.address");
     Integer port = Integer.parseInt(m_properties.getProperty("ip.port"));
+    Integer dequeSize = Integer.parseInt(m_properties.getProperty("deque.size"));
+    m_observations = new PriorityBlockingDeque<>(
+        (Comparator<ZephyrProtos.ObservationPB>)
+            (o1, o2) -> o1.getTime() > o2.getTime() ? -1 : o1.getTime() < o2.getTime() ? 1 : 0,
+        dequeSize
+    );
     new Thread(new RemoteClientSaveWorker(m_observations, ipAddress, port)).start();
   }
 
@@ -91,10 +94,11 @@ public class InsertTrigger implements ITrigger
           if (builder.hasName() && builder.hasTime() && builder.hasUnit() && builder.getValuesCount() > 0)
           {
 //            LOG.info("Sending " + builder.getName() + ", " + builder.getUnit() + ", " + builder.getTime() + ", " + builder.getValues(0));
-
             m_map.get(key).remove(localKey);
-            m_observations.put(builder.build());
-//            m_queryThreadExecutor.execute(new RemoteClientSaveWorker(builder.build(), ipAddress, port));
+            synchronized (m_observations)
+            {
+              m_observations.addLast(builder.build());
+            }
           }
         }
 

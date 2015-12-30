@@ -2,14 +2,14 @@ package si.bleedy;
 
 import java.awt.*;
 import java.io.Serializable;
-import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.swing.*;
 
 import org.apache.commons.math3.complex.Complex;
@@ -17,7 +17,6 @@ import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
@@ -41,15 +40,11 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
-import com.datastax.spark.connector.japi.CassandraJavaUtil;
-import com.datastax.spark.connector.japi.CassandraRow;
-import com.datastax.spark.connector.japi.CassandraStreamingJavaUtil;
 import com.google.common.collect.Iterables;
 
 import scala.Tuple2;
 import si.bleedy.data.ObservationData;
 import si.bleedy.runnable.IOTTCPReceiver;
-import si.bleedy.runnable.IOTUDPReceiver;
 
 /**
  * @author bratwurzt
@@ -62,6 +57,7 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
   //private float m_vcc = 5.0f, ganancia = 5.0f, RefTension = 2.98f, Ra = 2985.0f, Rc = 2995.0f, Rb = 698.0f;
   private float m_vcc = 5.0f, ganancia = 5.0f, RefTension = 2.98f, Ra = 4640.0f, Rc = 4719.0f, Rb = 698.0f;
   private SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+  protected final ExecutorService m_threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
 //  static
 //  {
@@ -72,7 +68,8 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
   /**
    * The number of subplots.
    */
-  public static final String[] PLOT_NAMES = new String[]{"r to r_s", "heart rate_bpm", "vmu_g", "respiration rate_bpm", "battery voltage_V", "ecg_mV"};
+  public static final String[] PLOT_NAMES = new String[]{"r to r_s", "heart rate_bpm", "vmu_g", "respiration rate_bpm", "battery voltage_V"/*, "ecg_mV"*/};
+//  public static final String[] PLOT_NAMES = new String[]{"ecg_mV"};
 
   /**
    * The datasets.
@@ -82,19 +79,18 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
   /**
    * The most recent value added to series 1.
    */
-  private final double[] lastValue;
-
+//  private final double[] lastValue;
   public TestCassandraToSparkStreaming(String name)
   {
     super(name);
-    lastValue = new double[PLOT_NAMES.length];
+//    lastValue = new double[PLOT_NAMES.length];
 
     final CombinedDomainXYPlot plot = new CombinedDomainXYPlot(new DateAxis("Time"));
     this.datasets = new TimeSeriesCollection[PLOT_NAMES.length];
 
     for (int i = 0; i < PLOT_NAMES.length; i++)
     {
-      this.lastValue[i] = 100.0;
+//      this.lastValue[i] = 100.0;
       String[] split = PLOT_NAMES[i].split("_");
       final TimeSeries series = new TimeSeries(split[0]);
       this.datasets[i] = new TimeSeriesCollection(series);
@@ -121,7 +117,7 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
     //      plot.setAxisOffset(new Spacer(Spacer.ABSOLUTE, 4, 4, 4, 4));
     final ValueAxis axis = plot.getDomainAxis();
     axis.setAutoRange(true);
-    axis.setFixedAutoRange(240000.0);  // 60 seconds
+    axis.setFixedAutoRange(180000.0);  // 60 seconds
 
     final JPanel content = new JPanel(new BorderLayout());
     final ChartPanel chartPanel = new ChartPanel(chart);
@@ -146,39 +142,22 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
     )
         .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr);
 
-    CassandraStreamingJavaUtil.javaFunctions(zephyrStream)
-        .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
-        .saveToCassandra();
+//    CassandraStreamingJavaUtil.javaFunctions(zephyrStream)
+//        .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
+//        .saveToCassandra();
+//
+//    JavaDStream<ObservationData> cassStream = ssc.receiverStream(
+//        new CassandraTCPReceiver(StorageLevel.MEMORY_ONLY(), 8111)
+//    );
 
-    JavaDStream<ObservationData> cassStream = ssc.receiverStream(
-        new IOTUDPReceiver(StorageLevel.MEMORY_ONLY(), 8111)
-    );
-
-    cassStream.foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
-      if (rdd != null && rdd.count() > 0)
+    zephyrStream.foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
+      if (rdd.count() > 0)
       {
-        List<Tuple2<String, Iterable<ObservationData>>> collect = rdd.distinct()
+        final List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
             .groupBy(ObservationData::getGrouping)
             .collect();
 
-        for (Tuple2<String, Iterable<ObservationData>> t : collect)
-        {
-          t._2().forEach(o -> {
-            int index = getIndex(t._1());
-            if (index >= 0)
-            {
-              try
-              {
-                lastValue[index] = o.getValue();
-                datasets[index].getSeries(0).add(new Millisecond(new Date(o.getTimestamp())), lastValue[index]);
-              }
-              catch (Exception e)
-              {
-                e.printStackTrace();
-              }
-            }
-          });
-        }
+        m_threadPool.execute(new PlotGraphAsync(collect));
       }
       return null;
     });
@@ -187,24 +166,39 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
     ssc.awaitTermination();
   }
 
-  private int getIndex(String name)
+  private class PlotGraphAsync implements Runnable
   {
-    switch (name)
+    private final List<Tuple2<String, Iterable<ObservationData>>> m_collect;
+
+    public PlotGraphAsync(List<Tuple2<String, Iterable<ObservationData>>> collect)
     {
-      case "r to r_s":
-        return 0;
-      case "heart rate_bpm":
-        return 1;
-      case "vmu_g":
-        return 2;
-      case "respiration rate_bpm":
-        return 3;
-      case "battery voltage_V":
-        return 4;
-      case "ecg_mV":
-        return 5;
-      default:
-        return -1;
+      m_collect = collect;
+    }
+
+    @Override
+    public void run()
+    {
+      for (Tuple2<String, Iterable<ObservationData>> t : m_collect)
+      {
+        t._2().forEach(o -> {
+          int index = ObservationData.getIndex(PLOT_NAMES, t._1());
+          if (index >= 0)
+          {
+            synchronized (datasets)
+            {
+              TimeSeries series = datasets[index].getSeries(0);
+              try
+              {
+                series.add(new Millisecond(new Date(o.getTimestamp())), o.getValue());
+              }
+              catch (Exception e)
+              {
+                e.printStackTrace();
+              }
+            }
+          }
+        });
+      }
     }
   }
 
@@ -410,7 +404,7 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
               for (ObservationData obs : o)
               {
                 avgTimestamp = avgTimestamp == null ? obs.getTimestamp() : avgTimestamp + obs.getTimestamp();
-                fp1fp2AlphaBeta[getIndex(obs.getGrouping())] = obs.getValue();
+                fp1fp2AlphaBeta[ObservationData.getIndex(PLOT_NAMES, obs.getGrouping())] = obs.getValue();
               }
               avgTimestamp /= 4;
 
