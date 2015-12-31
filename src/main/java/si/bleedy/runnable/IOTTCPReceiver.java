@@ -92,7 +92,7 @@ public class IOTTCPReceiver extends Receiver<ObservationData> implements Seriali
     {
       if (entry.getDuration() == 0)
       {
-        store(new ObservationData(entry.getName(), entry.getUnit(), entry.getTime(), entry.getValues(0)));
+        store(new ObservationData(entry.getName(), entry.getUnit(), entry.getTime() + 35000, entry.getValues(0)));
       }
       else
       {
@@ -101,7 +101,7 @@ public class IOTTCPReceiver extends Receiver<ObservationData> implements Seriali
         {
           String value = entry.getValues(i);
           long timestamp = entry.getTime() + i * oneStepDur;
-          store(new ObservationData(entry.getName(), entry.getUnit(), timestamp, value));
+          store(new ObservationData(entry.getName(), entry.getUnit(), timestamp + 35000, value));
         }
       }
       //restart("Connecting again");

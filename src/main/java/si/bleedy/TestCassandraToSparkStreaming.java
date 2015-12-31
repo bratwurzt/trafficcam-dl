@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,6 +20,7 @@ import org.apache.commons.math3.transform.TransformType;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.storage.StorageLevel;
@@ -27,6 +29,7 @@ import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.apache.spark.streaming.mqtt.MQTTUtils;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
@@ -40,6 +43,8 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
+import com.datastax.spark.connector.japi.CassandraJavaUtil;
+import com.datastax.spark.connector.japi.CassandraStreamingJavaUtil;
 import com.google.common.collect.Iterables;
 
 import scala.Tuple2;
@@ -55,7 +60,7 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
   private static final Logger LOG = Logger.getLogger(TestCassandraToSparkStreaming.class);
   //private float m_vcc = 3.3f;
   //private float m_vcc = 5.0f, ganancia = 5.0f, RefTension = 2.98f, Ra = 2985.0f, Rc = 2995.0f, Rb = 698.0f;
-  private float m_vcc = 5.0f, ganancia = 5.0f, RefTension = 2.98f, Ra = 4640.0f, Rc = 4719.0f, Rb = 698.0f;
+  private static float m_vcc = 5.0f, ganancia = 5.0f, RefTension = 2.98f, Ra = 4640.0f, Rc = 4719.0f, Rb = 698.0f;
   private SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
   protected final ExecutorService m_threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
@@ -68,8 +73,11 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
   /**
    * The number of subplots.
    */
-  public static final String[] PLOT_NAMES = new String[]{"r to r_s", "heart rate_bpm", "vmu_g", "respiration rate_bpm", "battery voltage_V"/*, "ecg_mV"*/};
-//  public static final String[] PLOT_NAMES = new String[]{"ecg_mV"};
+//  public static final String[] PLOT_NAMES = new String[]{"r to r_s", "heart rate_bpm", "vmu_g", "respiration rate_bpm", "breathing wave amplitude_ml"};
+//  public static final String[] PLOT_NAMES = new String[]{
+//      "r to r_s", "heart rate_bpm", "vmu_g", "respiration rate_bpm", "breathing wave amplitude_ml", "rpi-gsr_mV", "rpi-temp_mV"/*, "rpi-ecg_mV"*/
+//  };
+  public static final String[] PLOT_NAMES = new String[]{"rpi-gsr_mV", "rpi-temp_mV"};
 
   /**
    * The datasets.
@@ -117,7 +125,7 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
     //      plot.setAxisOffset(new Spacer(Spacer.ABSOLUTE, 4, 4, 4, 4));
     final ValueAxis axis = plot.getDomainAxis();
     axis.setAutoRange(true);
-    axis.setFixedAutoRange(180000.0);  // 60 seconds
+    axis.setFixedAutoRange(240000.0);  // 60 seconds
 
     final JPanel content = new JPanel(new BorderLayout());
     final ChartPanel chartPanel = new ChartPanel(chart);
@@ -134,33 +142,50 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
         .setMaster("local[3]");
 
     // streaming
-    Duration batchDuration = Durations.seconds(1);
+    Duration batchDuration = Durations.milliseconds(500);
     final JavaStreamingContext ssc = new JavaStreamingContext(conf, batchDuration);
 
-    JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
-        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
-    )
-        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr);
+//    JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
+//        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
+//    )
+//        .filter((Function<ObservationData, Boolean>)ObservationData::filterNonEcgZephyr);
 
-//    CassandraStreamingJavaUtil.javaFunctions(zephyrStream)
+    final JavaDStream<ObservationData> mqttStream = MQTTUtils.createStream(ssc, "tcp://10.99.9.25:1883", "temp/gsr/ecg/time")
+        .map(entry -> entry.split("\\|"))
+        .flatMap((FlatMapFunction<String[], ObservationData>)strings -> {
+          int tempAnalog = Integer.parseInt(strings[0]);
+          int gsrAnalog = Integer.parseInt(strings[1]);
+          int ecgAnalog = Integer.parseInt(strings[2]);
+          long timestamp = Long.parseLong(strings[3]);
+          return Arrays.asList(
+              new ObservationData("rpi-temp", "mV", timestamp, TestCassandraToSparkStreaming.getVoltage(tempAnalog)),
+              new ObservationData("rpi-gsr", "mV", timestamp, TestCassandraToSparkStreaming.getVoltage(gsrAnalog)),
+              new ObservationData("rpi-ecg", "mV", timestamp, TestCassandraToSparkStreaming.getVoltage(ecgAnalog))
+          );
+        })
+        .transform((Function2<JavaRDD<ObservationData>, Time, JavaRDD<ObservationData>>)(rdd, time) -> getRollingMeanJavaRDD(rdd));
+
+//    JavaDStream<ObservationData> union = zephyrStream.union(mqttStream);
+
+//    CassandraStreamingJavaUtil.javaFunctions(union)
 //        .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
 //        .saveToCassandra();
-//
-//    JavaDStream<ObservationData> cassStream = ssc.receiverStream(
-//        new CassandraTCPReceiver(StorageLevel.MEMORY_ONLY(), 8111)
-//    );
 
-    zephyrStream.foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
-      if (rdd.count() > 0)
-      {
-        final List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
-            .groupBy(ObservationData::getGrouping)
-            .collect();
+    mqttStream.foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
+          if (rdd.count() > 0)
+          {
+            final List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
+                .groupBy(ObservationData::getGrouping)
+                .collect();
 
-        m_threadPool.execute(new PlotGraphAsync(collect));
-      }
-      return null;
-    });
+            m_threadPool.execute(new PlotGraphAsync(collect));
+          }
+          return null;
+        });
+
+//        JavaDStream<ObservationData> cassStream = ssc.receiverStream(
+//            new CassandraTCPReceiver(StorageLevel.MEMORY_ONLY(), 8111)
+//        );
 
     ssc.start();
     ssc.awaitTermination();
@@ -186,15 +211,7 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
           {
             synchronized (datasets)
             {
-              TimeSeries series = datasets[index].getSeries(0);
-              try
-              {
-                series.add(new Millisecond(new Date(o.getTimestamp())), o.getValue());
-              }
-              catch (Exception e)
-              {
-                e.printStackTrace();
-              }
+              datasets[index].getSeries(0).add(new Millisecond(new Date(o.getTimestamp())), o.getValue());
             }
           }
         });
@@ -204,38 +221,30 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
 
   private JavaRDD<ObservationData> getRollingMeanJavaRDD(JavaRDD<ObservationData> rdd)
   {
-    return rdd.sortBy((Function<ObservationData, Long>)ObservationData::getTimestamp, false, 2)
-        .groupBy(ObservationData::getName)
+    return rdd
+//        .sortBy((Function<ObservationData, Long>)ObservationData::getTimestamp, false, 2)
+        .groupBy(ObservationData::getGrouping)
         .mapValues(o -> {
           if (o != null)
           {
             int size = Iterables.size(o);
             if (size > 0)
             {
-              double avgValue = 0;
-              String name1 = null;
-              Long maxTimestamp = 0L, minTimestamp = Long.MAX_VALUE;
-              for (ObservationData d : o)
+              Iterator<ObservationData> iterator = o.iterator();
+              ObservationData d = iterator.next();
+              String name = d.getName();
+              String unit = d.getUnit();
+              double avgValue = d.getValue();
+              while (iterator.hasNext())
               {
+                d = iterator.next();
                 avgValue += d.getValue();
-                if (name1 == null)
-                {
-                  name1 = d.getName();
-                }
-                if (d.getTimestamp() > maxTimestamp)
-                {
-                  maxTimestamp = d.getTimestamp();
-                }
-                if (d.getTimestamp() < minTimestamp)
-                {
-                  minTimestamp = d.getTimestamp();
-                }
               }
               avgValue /= size;
               return new ObservationData(
-                  name1,
-                  "",
-                  (maxTimestamp + minTimestamp) / 2,
+                  name,
+                  unit,
+                  d.getTimestamp(),
                   avgValue
               );
             }
@@ -252,7 +261,7 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
     return new ObservationData("gsr", "resistance", timestamp, conductance);
   }
 
-  private float getVoltage(int analogValue)
+  public static float getVoltage(int analogValue)
   {
     return (analogValue * m_vcc) / 1023;
   }

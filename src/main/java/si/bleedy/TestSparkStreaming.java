@@ -132,32 +132,32 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     // streaming
     JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.milliseconds(1000));
 
-    JavaDStream<ObservationData> cassStream = ssc.receiverStream(
-        new IOTUDPReceiver(StorageLevel.MEMORY_ONLY(), 8111)
-    );
+//    JavaDStream<ObservationData> cassStream = ssc.receiverStream(
+//        new IOTUDPReceiver(StorageLevel.MEMORY_ONLY(), 8111)
+//    );
 
-//    final JavaDStream<ObservationData> mqttStream = MQTTUtils.createStream(ssc, "tcp://10.99.9.25:1883", "temp/gsr/ecg/time")
-//        .map(entry -> entry.split("\\|"))
-//        .flatMap((FlatMapFunction<String[], ObservationData>)strings -> {
-//          int tempAnalog = Integer.parseInt(strings[0]);
-//          int gsrAnalog = Integer.parseInt(strings[1]);
-//          int ecgAnalog = Integer.parseInt(strings[2]);
-//          long timestamp = Long.parseLong(strings[3]);
-//          return Arrays.asList(
-//              //computeConductance(gsrAnalog, timestamp),
-//              //computeTemperature(tempAnalog, timestamp)
-//              new ObservationData("temp", "mV", timestamp, getVoltage(tempAnalog)),
-//              new ObservationData("gsr", "mV", timestamp, getVoltage(gsrAnalog)),
-//              new ObservationData("ecg", "mV", timestamp, getVoltage(ecgAnalog))
-//          );
-//        });
+    final JavaDStream<ObservationData> mqttStream = MQTTUtils.createStream(ssc, "tcp://10.99.9.25:1883", "temp/gsr/ecg/time")
+        .map(entry -> entry.split("\\|"))
+        .flatMap((FlatMapFunction<String[], ObservationData>)strings -> {
+          int tempAnalog = Integer.parseInt(strings[0]);
+          int gsrAnalog = Integer.parseInt(strings[1]);
+          int ecgAnalog = Integer.parseInt(strings[2]);
+          long timestamp = Long.parseLong(strings[3]);
+          return Arrays.asList(
+              //computeConductance(gsrAnalog, timestamp),
+              //computeTemperature(tempAnalog, timestamp)
+              new ObservationData("temp", "mV", timestamp, getVoltage(tempAnalog)),
+              new ObservationData("gsr", "mV", timestamp, getVoltage(gsrAnalog)),
+              new ObservationData("ecg", "mV", timestamp, getVoltage(ecgAnalog))
+          );
+        });
     //final FastFourierTransformer transformer = new FastFourierTransformer(DftNormalization.STANDARD);
     //JavaDStream<ObservationData> museStream = ssc.receiverStream(
     //    new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8100)
     //);
     //// compute Muse FP arousal and valence
     //JavaDStream<ObservationData> eegArousalAndValenceStream = getMuseArousalValenceDStream(museStream);
-    cassStream
+    mqttStream
 //        .window(Durations.milliseconds(500), Durations.milliseconds(100))
 //        .transform(new Function2<JavaRDD<ObservationData>, Time, JavaRDD<ObservationData>>()  // mean over last 5 seconds
 //        {
@@ -325,40 +325,6 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     }
   }
 
-  private JavaRDD<ObservationData> getRollingMeanJavaRDD(JavaRDD<ObservationData> rdd)
-  {
-    return rdd
-//        .sortBy((Function<ObservationData, Long>)ObservationData::getTimestamp, false, 2)
-        .groupBy(ObservationData::getName)
-        .mapValues(o -> {
-          if (o != null)
-          {
-            int size = Iterables.size(o);
-            if (size > 0)
-            {
-              Iterator<ObservationData> iterator = o.iterator();
-              ObservationData d = iterator.next();
-              String name = d.getName();
-              String unit = d.getUnit();
-              double avgValue = d.getValue();
-              while (iterator.hasNext())
-              {
-                d = iterator.next();
-                avgValue += d.getValue();
-              }
-              avgValue /= size;
-              return new ObservationData(
-                  name,
-                  unit,
-                  d.getTimestamp(),
-                  avgValue
-              );
-            }
-          }
-          return null;
-        })
-        .values();
-  }
 
   private ObservationData computeConductance(int gsrAnalog, long timestamp)
   {

@@ -96,6 +96,26 @@ public class ObservationData implements Serializable
     return "ecg".equals(getName()) && getValue() < 1000;
   }
 
+  public Boolean filterNonEcgZephyr()
+  {
+    return !"ecg".equals(getName());
+  }
+
+  public void setName(String name)
+  {
+    m_name = name;
+  }
+
+  public void setUnit(String unit)
+  {
+    m_unit = unit;
+  }
+
+  public void setTimestamp(Long timestamp)
+  {
+    m_timestamp = timestamp;
+  }
+
   @Override
   public String toString()
   {
@@ -122,5 +142,10 @@ public class ObservationData implements Serializable
        }
     }
     return -1;
+  }
+
+  public ObservationData shiftTimestamp(ObservationData observationData)
+  {
+    return null;
   }
 }
