@@ -23,11 +23,11 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 
 public class MIT_QrsDetector_Runner
 {
@@ -92,13 +92,13 @@ public class MIT_QrsDetector_Runner
       InputStream FiFile = new FileInputStream(data_dir + strLine + ".txt");
 
       start_time = System.currentTimeMillis();
-      code.Initialise(strLine);
-      result = code.get_result(FiFile, strLine);
+      code.init();
+      code.getResult(new ArrayList<>());
       end_time = System.currentTimeMillis();
 
       trial_time = end_time - start_time;
       elapsed_time += ((double)trial_time / 1000);
-      String strLog = strLine + " " + result + " beats detected. Time (ms): " + trial_time + " Total Time (s)= " + elapsed_time + "\n";
+      String strLog = strLine + " " + "" + " beats detected. Time (ms): " + trial_time + " Total Time (s)= " + elapsed_time + "\n";
 
       try
       {

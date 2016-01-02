@@ -4,24 +4,18 @@ import java.io.Serializable;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.List;
 
+import si.bleedy.data.StreamContextWrapper;
+import si.bleedy.runnable.CassandraReceiver;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.storage.StorageLevel;
+import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
-import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import com.datastax.spark.connector.japi.CassandraJavaUtil;
-import com.datastax.spark.connector.japi.CassandraRow;
-import com.datastax.spark.connector.japi.CassandraStreamingJavaUtil;
 
 import si.bleedy.data.ObservationData;
-import si.bleedy.runnable.IOTTCPReceiver;
 
 /**
  * @author bratwurzt
@@ -46,20 +40,17 @@ public class SparkStreamingFromCassandra implements Serializable
         .setMaster("local[2]");
 
     // streaming
-    JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.seconds(1));
+    Duration batchDuration = Durations.seconds(1);
+    JavaStreamingContext ssc = new JavaStreamingContext(conf, batchDuration);
 
-    JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
-        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
-    )
-        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr);
-
-    CassandraStreamingJavaUtil.javaFunctions(zephyrStream)
-        .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
-        .saveToCassandra();
-
-//    JavaDStream<ObservationData> cassStream = ssc.receiverStream(
-//        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8111)
-//    );
+    CassandraReceiver receiver = new CassandraReceiver(
+        StorageLevel.MEMORY_ONLY(),
+        "17.12.2015 20:28",
+        "16.12.2015 04:01",
+        batchDuration,
+        30000
+    );
+    JavaDStream<ObservationData> cassStream = ssc.receiverStream(receiver);
 
     ssc.start();
     ssc.awaitTermination();

@@ -19,41 +19,31 @@
 
 package si.bleedy.detectors;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 
+import java.io.Serializable;
 import java.util.*;
 
-import java.math.*;
+import si.bleedy.data.ObservationData;
 
-public class wQRS
+public class wQRS implements Serializable
 {
-
   //for writng and reading files (most of them are for debugging purpose)
-  private String root_dir = "/Users/julian/Documents/Work/EclipseWorkspace/QrsDetector/";
-
   private boolean DEBUG = false;
 
-  private String ltransf_filename = "ltransf_output.txt";
   private BufferedWriter ltransf_out_log = null;
-  private File ltransf_output_file = null;
 
   //Create an output file to store QRS locations, RR interval
-  private String MitFileName;
   private File log_file = null;
-  private BufferedWriter QrsOutput = null;
-  private String strQrsOutput = null;
+  //private BufferedWriter QrsOutput = null;
 
   private long BUFLN = 16384;  // must be a power of 2, see ltsamp()
   private double EYE_CLS = 0.25;   // eye-closing period is set to 0.25 sec (250 ms) */
   private double MaxQRSw = 0.13;    // maximum QRS width (130ms) */
   private double NDP = 2.5;    // adjust threshold if no QRS found in NDP seconds */
-  private double PWFreqDEF = 60;    /* power line (mains) frequency, in Hz (default) */
+  private double PWFreqDEF = 50;    /* power line (mains) frequency, in Hz (default) */
   private double TmDEF = 100;	/* minimum threshold value (default) */
 
   //char *pname;		/* the name by which this program was invoked */
@@ -69,13 +59,13 @@ public class wQRS
   private double lbuf[];
   private long ebuf[];
 
-  private double sps = 256;			     /* sampling frequency, in Hz (SR) */
+  private double sps = 250;			     /* sampling frequency, in Hz (SR) */
   private double samplingInterval = 1 / sps, max, min, onset;          /* sampling interval, in milliseconds */
   private int i, minutes = 0, timer, vflag = 0;
 
   private int EyeClosing;                  /* eye-closing period, related to SR */
   private int ExpectPeriod;                /* if no QRS is detected over this period,
-			the threshold is automatically reduced
+      the threshold is automatically reduced
 			to a minimum value;  the threshold is
 			restored upon a detection */
   private double Ta, T0, T1;		     /* high and low detection thresholds */
@@ -85,7 +75,8 @@ public class wQRS
   //WFDB_Siginfo *s;
   private long from = 0L, next_minute, spm, t, tj, tpq, to = 0L, tt, t1;
 
-  private long sampleNo, lastQRStime;
+  private long sampleNo, lastQRSSampleNo;
+  private int lastObsIndex;
   private double time;
   private double Yn, Yn1, Yn2;
 
@@ -95,11 +86,13 @@ public class wQRS
   private double ltransf[];
   private boolean NoRefractoryPeriod = true;
   private long timerRefactory = 0;
+  private long lastTimestamp = 0;
   private boolean NoFlagLTransf = true;
+  private List<Long> m_lastTimestamps = new ArrayList<>();
 
-  public void Initialise(String fileName)
+  public void init()
   {
-    sps = 256;
+    sps = 250;
     sampleNo = 0;
     time = 0;
     samplingInterval = 1000.0 / sps;
@@ -107,7 +100,7 @@ public class wQRS
     spm = (long)Math.round(60 * sps);
     next_minute = from + spm;
     LPn = (int)sps / PWFreq; 		/* The LP filter will have a notch at the
-			    power line (mains) frequency */
+          power line (mains) frequency */
     if (LPn > 8)
     {
       LPn = 8;	/* avoid filtering too agressively */
@@ -137,35 +130,33 @@ public class wQRS
       dytab[indexInitialise] = (int)Math.sqrt(lfsc);
       ltransf[indexInitialise] = 0;
     }
-    MitFileName = fileName;
-
-    String file_name = "QRS_Ouput_" + MitFileName + "Wqrs.txt";
-    log_file = new File(root_dir, file_name);
-    try
-    {
-      QrsOutput = new BufferedWriter(new FileWriter(log_file));
-    }
-    catch (IOException e)
-    {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-      System.err.print("Could not generate QRS output file:" + log_file);
-    }
-
-    if (DEBUG)
-    {
-
-      ltransf_output_file = new File(root_dir, ltransf_filename);
-
-      try
-      {
-        ltransf_out_log = new BufferedWriter(new FileWriter(ltransf_output_file));
-      }
-      catch (IOException e)
-      {
-        System.err.print("Could not open band-pass debug file.");
-      }
-    }
+    //String file_name = "QRS_Ouput_" + fileName + "Wqrs.txt";
+    //log_file = new File(root_dir, file_name);
+    //try
+    //{
+    //  QrsOutput = new BufferedWriter(new FileWriter(log_file));
+    //}
+    //catch (IOException e)
+    //{
+    //  // TODO Auto-generated catch block
+    //  e.printStackTrace();
+    //  System.err.print("Could not generate QRS output file:" + log_file);
+    //}
+    //
+    //if (DEBUG)
+    //{
+    //
+    //  ltransf_output_file = new File(root_dir, ltransf_filename);
+    //
+    //  try
+    //  {
+    //    ltransf_out_log = new BufferedWriter(new FileWriter(ltransf_output_file));
+    //  }
+    //  catch (IOException e)
+    //  {
+    //    System.err.print("Could not open band-pass debug file.");
+    //  }
+    //}
   }
   // ltsamp() returns a sample of the length transform of the input at time t.
   //Since this program analyzes only one signal, ltsamp() does not have an
@@ -240,33 +231,16 @@ public class wQRS
     }
   }
 
-  synchronized public double get_result(InputStream iFile, String fileName)
+  synchronized public List<ObservationData> getResult(List<ObservationData> collect)
   {
+    List<ObservationData> qrsTimes = new ArrayList<>();
     //Read the txt file as a stream
-    InputStreamReader inreadFile = new InputStreamReader(iFile);
-    BufferedReader bufFile = new BufferedReader(inreadFile, 500);
-    String strLineFile = null;
-    double sample = -1;
-
-    try
+    for (int i = 0; i < collect.size(); i++)
     {
-      strLineFile = bufFile.readLine();
-    }
-    catch (IOException e1)
-    {
-      System.err.print("Could not read ecg file.");
-    }
-
-    while (strLineFile != null)
-    {
-      //only read the first column of the txt file
-      StringTokenizer tok = new StringTokenizer(strLineFile, " ");
-      sample = Double.parseDouble(tok.nextToken());
-
-      sampletab[(int)(sampleNo % SAMBUFLN)] = gain * sample;
-
+      ObservationData sample = collect.get(i);
+      sampletab[(int)(sampleNo % SAMBUFLN)] = gain * sample.getValue();
       ltsamp(sampleNo);
-		
+
 		/* Average the first 8 seconds of the length-transformed samples
 		to determine the initial thresholds Ta and T0. The number of samples
 		in the average is limited to half of the ltsamp buffer if the sampling
@@ -305,12 +279,13 @@ public class wQRS
         if (ltransf[(int)(sampleNo % SAMBUFLN)] > T1)
         {	/* found a possible QRS near t */
           timer = 0; /* used for counting the time after previous QRS */
-          lastQRStime = sampleNo;
+          lastQRSSampleNo = sampleNo;
+          lastObsIndex = i;
           NoFlagLTransf = false;
           max = ltransf[(int)(sampleNo % SAMBUFLN)];
           min = ltransf[(int)(sampleNo % SAMBUFLN)];
 
-          for (tt = sampleNo - 1; (tt > lastQRStime - EyeClosing / 2) && (tt >= 0); tt--)
+          for (tt = sampleNo - 1; (tt > lastQRSSampleNo - EyeClosing / 2) && (tt >= 0); tt--)
           {
             if (ltransf[(int)(tt % SAMBUFLN)] < min)
             {
@@ -331,10 +306,10 @@ public class wQRS
           if (max > min + 10)
           {
             onset = max / 100 + 2;
-            tpq = lastQRStime - 5;
+            tpq = lastQRSSampleNo - 5;
             //for (tt = lastQRStime; (tt > lastQRStime - EyeClosing/2)&&(tt>3); tt--) {
-            tt = lastQRStime;
-            while ((tt > lastQRStime - EyeClosing / 2) && (tt > 3) && (NoRefractoryPeriod))
+            tt = lastQRSSampleNo;
+            while ((tt > lastQRSSampleNo - EyeClosing / 2) && (tt > 3) && (NoRefractoryPeriod))
             {
               if (ltransf[(int)(tt % SAMBUFLN)] - ltransf[(int)((tt - 1) % SAMBUFLN)] < onset &&
                   ltransf[(int)((tt - 1) % SAMBUFLN)] - ltransf[(int)((tt - 2) % SAMBUFLN)] < onset &&
@@ -344,23 +319,67 @@ public class wQRS
                 tpq = tt - LP2n;  // account for phase shift
                 NoRefractoryPeriod = false;
                 timerRefactory = (long)(0.25 * sps);
-                lastQRStime = tpq;
+                if (lastQRSSampleNo != tpq)
+                {
+                  if (lastQRSSampleNo > tpq)
+                  {
+                    lastObsIndex = lastObsIndex - (int)(lastQRSSampleNo - tpq);
+                  }
+                  //else
+                  //{
+                  //  lastObsIndex = lastObsIndex + (int)(tpq - lastQRSSampleNo);
+                  //}
+                  lastQRSSampleNo = tpq;
+                }
                 // Adjust thresholds */
                 Ta += (max - Ta) / 10;
                 T1 = Ta / 3;
 
                 //save QRS in text file
-                strQrsOutput = lastQRStime + " ";
-                try
+                if (lastObsIndex > 0)
                 {
-                  QrsOutput.write(strQrsOutput);
-                  QrsOutput.newLine();
-                  QrsOutput.flush();
+                  try
+                  {
+                    qrsTimes.add(new ObservationData("qrs", "bool", collect.get(lastObsIndex - 1).getTimestamp(), 0));
+                    qrsTimes.add(new ObservationData("qrs", "bool", collect.get(lastObsIndex).getTimestamp(), 1));
+                    qrsTimes.add(new ObservationData("qrs", "bool", collect.get(lastObsIndex + 1).getTimestamp(), 0));
+                  }
+                  catch (Exception e)
+                  {
+                    e.printStackTrace();
+                  }
                 }
-                catch (IOException e3)
+                //else if (lastObsIndex < 0)
+                //{
+                //  int normIndex = -1 * lastObsIndex;
+                //  if (m_lastTimestamps.size() > normIndex + 1)
+                //  {
+                //    try
+                //    {
+                //      qrsTimes.add(new ObservationData("qrs", "bool", m_lastTimestamps.get(normIndex + 1), 0));
+                //      qrsTimes.add(new ObservationData("qrs", "bool", m_lastTimestamps.get(normIndex), 1));
+                //      qrsTimes.add(new ObservationData("qrs", "bool", m_lastTimestamps.get(normIndex - 1), 0));
+                //    }
+                //    catch (Exception e)
+                //    {
+                //      e.printStackTrace();
+                //    }
+                //  }
+                //}
+                else
                 {
-                  System.err.print("Could not write QRS output file.");
+                  System.out.println();
                 }
+                //try
+                //{
+                //  QrsOutput.write(strQrsOutput);
+                //  QrsOutput.newLine();
+                //  QrsOutput.flush();
+                //}
+                //catch (IOException e3)
+                //{
+                //  System.err.print("Could not write QRS output file.");
+                //}
               }
               tt--;
             }
@@ -381,25 +400,22 @@ public class wQRS
 
       // Once past the learning period, decrease threshold if no QRS
       // was detected recently
-      if ((sampleNo - lastQRStime) > ExpectPeriod && Ta > Tm)
+      if ((sampleNo - lastQRSSampleNo) > ExpectPeriod && Ta > Tm)
       {
         Ta--;
         T1 = Ta / 3;
       }
 
-      //read new sample
-      try
-      {
-        strLineFile = bufFile.readLine();
-      }
-      catch (IOException e2)
-      {
-        System.err.print("Could not read ecg file.");
-      }
       //increment sampleIndex and time
-      time += 1 / (sps);
+      time += lastTimestamp == 0 ? 1 / (sps) : sample.getTimestamp() - lastTimestamp;
       sampleNo++;
+      lastTimestamp = sample.getTimestamp();
     }
-    return time;
+    m_lastTimestamps.clear();
+    for (int i = collect.size() - 1; i > collect.size() - 11; i--)
+    {
+      m_lastTimestamps.add(collect.get(i).getTimestamp());
+    }
+    return qrsTimes;
   }
 }

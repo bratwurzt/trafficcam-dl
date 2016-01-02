@@ -20,7 +20,6 @@ import org.apache.commons.math3.transform.TransformType;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.storage.StorageLevel;
@@ -29,7 +28,6 @@ import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.mqtt.MQTTUtils;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
@@ -43,8 +41,6 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
-import com.datastax.spark.connector.japi.CassandraJavaUtil;
-import com.datastax.spark.connector.japi.CassandraStreamingJavaUtil;
 import com.google.common.collect.Iterables;
 
 import scala.Tuple2;
@@ -54,10 +50,10 @@ import si.bleedy.runnable.IOTTCPReceiver;
 /**
  * @author bratwurzt
  */
-public class TestCassandraToSparkStreaming extends ApplicationFrame implements Serializable
+public class TestIOTStreaming extends ApplicationFrame implements Serializable
 {
   private static final long serialVersionUID = -4289949126909167376L;
-  private static final Logger LOG = Logger.getLogger(TestCassandraToSparkStreaming.class);
+  private static final Logger LOG = Logger.getLogger(TestIOTStreaming.class);
   //private float m_vcc = 3.3f;
   //private float m_vcc = 5.0f, ganancia = 5.0f, RefTension = 2.98f, Ra = 2985.0f, Rc = 2995.0f, Rb = 698.0f;
   private static float m_vcc = 5.0f, ganancia = 5.0f, RefTension = 2.98f, Ra = 4640.0f, Rc = 4719.0f, Rb = 698.0f;
@@ -73,11 +69,11 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
   /**
    * The number of subplots.
    */
-//  public static final String[] PLOT_NAMES = new String[]{"r to r_s", "heart rate_bpm", "vmu_g", "respiration rate_bpm", "breathing wave amplitude_ml"};
+  public static final String[] PLOT_NAMES = new String[]{"r to r_s", "heart rate_bpm", "vmu_g", "respiration rate_bpm", "breathing wave amplitude_ml"};
 //  public static final String[] PLOT_NAMES = new String[]{
 //      "r to r_s", "heart rate_bpm", "vmu_g", "respiration rate_bpm", "breathing wave amplitude_ml", "rpi-gsr_mV", "rpi-temp_mV"/*, "rpi-ecg_mV"*/
 //  };
-  public static final String[] PLOT_NAMES = new String[]{"rpi-gsr_mV", "rpi-temp_mV"};
+//  public static final String[] PLOT_NAMES = new String[]{"rpi-gsr_mV", "rpi-temp_mV"};
 
   /**
    * The datasets.
@@ -88,7 +84,7 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
    * The most recent value added to series 1.
    */
 //  private final double[] lastValue;
-  public TestCassandraToSparkStreaming(String name)
+  public TestIOTStreaming(String name)
   {
     super(name);
 //    lastValue = new double[PLOT_NAMES.length];
@@ -145,25 +141,25 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
     Duration batchDuration = Durations.milliseconds(500);
     final JavaStreamingContext ssc = new JavaStreamingContext(conf, batchDuration);
 
-//    JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
-//        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
-//    )
-//        .filter((Function<ObservationData, Boolean>)ObservationData::filterNonEcgZephyr);
+    JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
+        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
+    )
+        .filter((Function<ObservationData, Boolean>)ObservationData::filterNonEcgZephyr);
 
-    final JavaDStream<ObservationData> mqttStream = MQTTUtils.createStream(ssc, "tcp://10.99.9.25:1883", "temp/gsr/ecg/time")
-        .map(entry -> entry.split("\\|"))
-        .flatMap((FlatMapFunction<String[], ObservationData>)strings -> {
-          int tempAnalog = Integer.parseInt(strings[0]);
-          int gsrAnalog = Integer.parseInt(strings[1]);
-          int ecgAnalog = Integer.parseInt(strings[2]);
-          long timestamp = Long.parseLong(strings[3]);
-          return Arrays.asList(
-              new ObservationData("rpi-temp", "mV", timestamp, TestCassandraToSparkStreaming.getVoltage(tempAnalog)),
-              new ObservationData("rpi-gsr", "mV", timestamp, TestCassandraToSparkStreaming.getVoltage(gsrAnalog)),
-              new ObservationData("rpi-ecg", "mV", timestamp, TestCassandraToSparkStreaming.getVoltage(ecgAnalog))
-          );
-        })
-        .transform((Function2<JavaRDD<ObservationData>, Time, JavaRDD<ObservationData>>)(rdd, time) -> getRollingMeanJavaRDD(rdd));
+    //final JavaDStream<ObservationData> mqttStream = MQTTUtils.createStream(ssc, "tcp://10.99.9.25:1883", "temp/gsr/ecg/time")
+    //    .map(entry -> entry.split("\\|"))
+    //    .flatMap((FlatMapFunction<String[], ObservationData>)strings -> {
+    //      int tempAnalog = Integer.parseInt(strings[0]);
+    //      int gsrAnalog = Integer.parseInt(strings[1]);
+    //      int ecgAnalog = Integer.parseInt(strings[2]);
+    //      long timestamp = Long.parseLong(strings[3]);
+    //      return Arrays.asList(
+    //          new ObservationData("rpi-temp", "mV", timestamp, TestIOTStreaming.getVoltage(tempAnalog)),
+    //          new ObservationData("rpi-gsr", "mV", timestamp, TestIOTStreaming.getVoltage(gsrAnalog)),
+    //          new ObservationData("rpi-ecg", "mV", timestamp, TestIOTStreaming.getVoltage(ecgAnalog))
+    //      );
+    //    })
+    //    .transform((Function2<JavaRDD<ObservationData>, Time, JavaRDD<ObservationData>>)(rdd, time) -> getRollingMeanJavaRDD(rdd));
 
 //    JavaDStream<ObservationData> union = zephyrStream.union(mqttStream);
 
@@ -171,7 +167,7 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
 //        .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
 //        .saveToCassandra();
 
-    mqttStream.foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
+    zephyrStream.foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
           if (rdd.count() > 0)
           {
             final List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
@@ -584,7 +580,7 @@ public class TestCassandraToSparkStreaming extends ApplicationFrame implements S
   {
     try
     {
-      TestCassandraToSparkStreaming demo = new TestCassandraToSparkStreaming("test");
+      TestIOTStreaming demo = new TestIOTStreaming("test");
       demo.pack();
       RefineryUtilities.centerFrameOnScreen(demo);
       demo.setVisible(true);
