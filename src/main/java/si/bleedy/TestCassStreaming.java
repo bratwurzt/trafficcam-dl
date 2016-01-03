@@ -4,7 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.io.Serializable;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -13,8 +13,6 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import com.google.common.collect.Iterables;
-import si.bleedy.detectors.wQRS;
-import si.bleedy.runnable.CassandraReceiver;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
@@ -39,6 +37,8 @@ import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
 import scala.Tuple2;
 import si.bleedy.data.ObservationData;
+import si.bleedy.detectors.wQRS;
+import si.bleedy.runnable.CassandraReceiver;
 
 /**
  * @author bratwurzt
@@ -47,8 +47,6 @@ public class TestCassStreaming extends ApplicationFrame implements Serializable
 {
   private static final long serialVersionUID = -4289949126909167376L;
   private static final Logger LOG = Logger.getLogger(TestCassStreaming.class);
-  private SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-  //protected final ExecutorService m_threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2);
   public static SparkConf conf = new SparkConf()
       .setAppName("heart")
       .set("spark.cassandra.connection.host", "cassandra.marand.si")
@@ -59,7 +57,7 @@ public class TestCassStreaming extends ApplicationFrame implements Serializable
   public static Duration batchDuration = Durations.milliseconds(1000);
   public static final JavaStreamingContext ssc = new JavaStreamingContext(conf, batchDuration);
   public final LinkedBlockingQueue<List<Tuple2<String, Iterable<ObservationData>>>> m_plotDataQueue;
-  private long m_rangeMillis = 10000;
+  private long m_rangeMillis = 30000;
   private wQRS m_qrsDetector;
 
   //static
@@ -75,7 +73,7 @@ public class TestCassStreaming extends ApplicationFrame implements Serializable
   //  public static final String[] PLOT_NAMES = new String[]{
   //      "r to r_s", "heart rate_bpm", "vmu_g", "respiration rate_bpm", "breathing wave amplitude_ml", "rpi-gsr_mV", "rpi-temp_mV"/*, "rpi-ecg_mV"*/
   //  };
-    public static final String[] PLOT_NAMES = new String[]{"qrs_bool", "ecg_mV", "r to r_s"};
+  public static final String[] PLOT_NAMES = new String[]{"qrs_bool", "ecg_mV",/* "ecg-avg_mV",*/ "r to r_s"};
 
   /**
    * The datasets.
@@ -145,7 +143,50 @@ public class TestCassStreaming extends ApplicationFrame implements Serializable
 
     JavaDStream<ObservationData> cassStream = ssc.receiverStream(receiver);
 
-    JavaDStream<ObservationData> transform = cassStream.filter(o -> "ecg".equals(o.getName()))
+    //ssc.checkpoint("C:\\Projects\\trafficcam-dl\\test");
+
+    // ecg
+    JavaDStream<ObservationData> ecgStream = cassStream
+        .filter(o -> "ecg".equals(o.getName()))
+        .transform(rdd -> {
+          return ssc.sparkContext().parallelize(fillMissingSamplesWithAvg(rdd.collect()));
+        });
+
+    //JavaDStream<ObservationData> countStream = ecgStream
+    //    .countByWindow(Durations.milliseconds(50), Durations.milliseconds(10))
+    //    .map(o -> new ObservationData("sample", "sum", 0L, (double)o));
+    //
+    //JavaDStream<ObservationData> sumStream = ecgStream
+    //    .reduceByWindow((o1, o2) -> {
+    //      o1.setValue(o1.getValue() + o2.getValue());
+    //      return o1;
+    //    }, Durations.milliseconds(50), Durations.milliseconds(10));
+    //
+    //JavaDStream<ObservationData> movingAvg = countStream.union(sumStream)
+    //    .transform(rdd -> {
+    //      if (rdd.count() == 2)
+    //      {
+    //        ObservationData data = rdd.reduce((o1, o2) -> {
+    //          if ("sample_sum".equals(o1.getGrouping()))
+    //          {
+    //            o2.setValue(o2.getValue() / o1.getValue());
+    //            o2.setName(o2.getName() + "-avg");
+    //            return o2;
+    //          }
+    //          else
+    //          {
+    //            o1.setValue(o1.getValue() / o2.getValue());
+    //            o1.setName(o1.getName() + "-avg");
+    //            return o1;
+    //          }
+    //        });
+    //
+    //        return ssc.sparkContext().parallelize(Collections.singletonList(data));
+    //      }
+    //      return null;
+    //    });
+
+    JavaDStream<ObservationData> qrsStream = ecgStream
         .transform(rdd -> {
           if (rdd.count() > 0)
           {
@@ -156,21 +197,80 @@ public class TestCassStreaming extends ApplicationFrame implements Serializable
           return rdd;
         });
 
-    transform.union(cassStream).foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
-      if (rdd.count() > 0)
-      {
-        final List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
-            .groupBy(ObservationData::getGrouping)
-            .collect();
+    // plot
+    qrsStream.union(ecgStream).union(cassStream.filter(o -> "r to r".equals(o.getName())))
+        .foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
+          if (rdd.count() > 0)
+          {
+            final List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
+                .groupBy(ObservationData::getGrouping)
+                .collect();
 
-        m_plotDataQueue.add(collect);
-        //m_threadPool.execute(new PlotGraphAsync(collect));
-      }
-      return null;
-    });
+            m_plotDataQueue.add(collect);
+          }
+          return null;
+        });
 
     ssc.start();
     ssc.awaitTermination();
+  }
+
+  private List<ObservationData> fillMissingSamplesWithAvg(List<ObservationData> collect)
+  {
+    List<ObservationData> returnList = new ArrayList<>();
+
+    for (int i = 0; i < collect.size(); i++)
+    {
+      ObservationData data = collect.get(i);
+      if (i > 0 && i < collect.size() - 1)
+      {
+        ObservationData previousData = collect.get(i - 1);
+        ObservationData nextData = collect.get(i + 1);
+
+        if (data.getValue() > 1000 && previousData.getValue() < 1000 && nextData.getValue() < 1000)
+        {
+          data.setValue((previousData.getValue() + nextData.getValue()) / 2);
+        }
+
+        int timeDiff = (int)(data.getTimestamp() - previousData.getTimestamp()) - 4;
+        if (timeDiff > 0 && previousData.getValue() < 1000 && data.getValue() < 1000)
+        {
+          for (int j = 4; j <= timeDiff; j += 4)
+          {
+            returnList
+                .add(new ObservationData(data.getName(), data.getUnit(), previousData.getTimestamp() + j, (previousData.getValue() + data.getValue()) / 2));
+          }
+        }
+        returnList.add(data);
+      }
+      else if (i == 0)
+      {
+        ObservationData nextData = collect.get(i + 1);
+        if (data.getValue() > 1000 && nextData.getValue() < 1000)
+        {
+          data.setValue(nextData.getValue());
+        }
+        returnList.add(data);
+      }
+      else
+      {
+        ObservationData previousData = collect.get(i - 1);
+        if (data.getValue() > 1000 && previousData.getValue() < 1000)
+        {
+          data.setValue(previousData.getValue());
+        }
+        int timeDiff = (int)(data.getTimestamp() - previousData.getTimestamp()) - 4;
+        if (timeDiff > 0 && previousData.getValue() < 1000 && data.getValue() < 1000)
+        {
+          for (int j = 4; j <= timeDiff; j += 4)
+          {
+            returnList.add(new ObservationData(data.getName(), data.getUnit(), data.getTimestamp() + j, (previousData.getValue() + data.getValue()) / 2));
+          }
+        }
+        returnList.add(data);
+      }
+    }
+    return returnList;
   }
 
   private class PlotGraphAsync implements Runnable

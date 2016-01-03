@@ -91,7 +91,7 @@ public class CassandraReceiver extends Receiver<ObservationData> implements Seri
         Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
         while (!isStopped())
         {
-          long to = m_from + m_batchDurationMillis * 50;
+          long to = m_from + (m_batchDurationMillis < 1000 ? 1000 : m_batchDurationMillis) * 50;
           if (to > m_to)
           {
             to = m_to;
@@ -109,14 +109,13 @@ public class CassandraReceiver extends Receiver<ObservationData> implements Seri
                   (String)entry.get("value")))
               .collect();
 
-          //store(collect.iterator());
           synchronized (m_observations)
           {
             m_observations.addAll(collect);
           }
-          while (isObsDequeBigEnough(m_batchDurationMillis*10))
+          while (isObsDequeBigEnough((m_batchDurationMillis < 1000 ? 1000 : m_batchDurationMillis)*10))
           {
-            Thread.sleep(m_batchDurationMillis);
+            Thread.sleep((m_batchDurationMillis < 1000 ? 1000 : m_batchDurationMillis));
           }
           m_from = to;
         }
