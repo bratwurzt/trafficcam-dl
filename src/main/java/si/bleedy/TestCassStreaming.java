@@ -1,22 +1,21 @@
 package si.bleedy;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
+import java.awt.*;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 
-import com.google.common.collect.Iterables;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
@@ -35,6 +34,8 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
+import com.google.common.collect.Iterables;
+
 import scala.Tuple2;
 import si.bleedy.data.ObservationData;
 import si.bleedy.detectors.wQRS;
@@ -54,7 +55,7 @@ public class TestCassStreaming extends ApplicationFrame implements Serializable
       .setMaster("local[4]");
 
   // streaming
-  public static Duration batchDuration = Durations.milliseconds(1000);
+  public static Duration batchDuration = Durations.milliseconds(500);
   public static final JavaStreamingContext ssc = new JavaStreamingContext(conf, batchDuration);
   public final LinkedBlockingQueue<List<Tuple2<String, Iterable<ObservationData>>>> m_plotDataQueue;
   private long m_rangeMillis = 30000;
@@ -73,7 +74,7 @@ public class TestCassStreaming extends ApplicationFrame implements Serializable
   //  public static final String[] PLOT_NAMES = new String[]{
   //      "r to r_s", "heart rate_bpm", "vmu_g", "respiration rate_bpm", "breathing wave amplitude_ml", "rpi-gsr_mV", "rpi-temp_mV"/*, "rpi-ecg_mV"*/
   //  };
-  public static final String[] PLOT_NAMES = new String[]{"qrs_bool", "ecg_mV",/* "ecg-avg_mV",*/ "r to r_s"};
+  public static final String[] PLOT_NAMES = new String[]{"qrs_bool", "ecg_mV", "ecg-avg_mV", "r to r_s"};
 
   /**
    * The datasets.
@@ -135,15 +136,15 @@ public class TestCassStreaming extends ApplicationFrame implements Serializable
   {
     CassandraReceiver receiver = new CassandraReceiver(
         StorageLevel.MEMORY_ONLY(),
-        "21.12.2015 04:20",
-        "21.12.2015 08:20",
+        "31.12.2015 13:14",
+        "31.12.2015 15:20",
         batchDuration,
         100000
     );
 
     JavaDStream<ObservationData> cassStream = ssc.receiverStream(receiver);
 
-    //ssc.checkpoint("C:\\Projects\\trafficcam-dl\\test");
+//    ssc.checkpoint("H:\\Projects\\trafficcam-dl\\test");
 
     // ecg
     JavaDStream<ObservationData> ecgStream = cassStream
@@ -152,39 +153,39 @@ public class TestCassStreaming extends ApplicationFrame implements Serializable
           return ssc.sparkContext().parallelize(fillMissingSamplesWithAvg(rdd.collect()));
         });
 
-    //JavaDStream<ObservationData> countStream = ecgStream
-    //    .countByWindow(Durations.milliseconds(50), Durations.milliseconds(10))
-    //    .map(o -> new ObservationData("sample", "sum", 0L, (double)o));
-    //
-    //JavaDStream<ObservationData> sumStream = ecgStream
-    //    .reduceByWindow((o1, o2) -> {
-    //      o1.setValue(o1.getValue() + o2.getValue());
-    //      return o1;
-    //    }, Durations.milliseconds(50), Durations.milliseconds(10));
-    //
-    //JavaDStream<ObservationData> movingAvg = countStream.union(sumStream)
-    //    .transform(rdd -> {
-    //      if (rdd.count() == 2)
-    //      {
-    //        ObservationData data = rdd.reduce((o1, o2) -> {
-    //          if ("sample_sum".equals(o1.getGrouping()))
-    //          {
-    //            o2.setValue(o2.getValue() / o1.getValue());
-    //            o2.setName(o2.getName() + "-avg");
-    //            return o2;
-    //          }
-    //          else
-    //          {
-    //            o1.setValue(o1.getValue() / o2.getValue());
-    //            o1.setName(o1.getName() + "-avg");
-    //            return o1;
-    //          }
-    //        });
-    //
-    //        return ssc.sparkContext().parallelize(Collections.singletonList(data));
-    //      }
-    //      return null;
-    //    });
+    /*JavaDStream<ObservationData> countStream = ecgStream
+        .countByWindow(Durations.milliseconds(24), Durations.milliseconds(12))
+        .map(o -> new ObservationData("sample", "sum", 0L, (double)o));
+
+    JavaDStream<ObservationData> sumStream = ecgStream
+        .reduceByWindow((Function2<ObservationData, ObservationData, ObservationData>)(o1, o2) -> {
+          o1.setValue(o1.getValue() + o2.getValue());
+          return o1;
+        }, Durations.milliseconds(24), Durations.milliseconds(12));
+
+    JavaDStream<ObservationData> movingAvg = countStream.union(sumStream)
+        .transform(rdd -> {
+          if (rdd.count() == 2)
+          {
+            ObservationData data = rdd.reduce((o1, o2) -> {
+              if ("sample_sum".equals(o1.getGrouping()))
+              {
+                o2.setValue(o2.getValue() / o1.getValue());
+                o2.setName(o2.getName() + "-avg");
+                return o2;
+              }
+              else
+              {
+                o1.setValue(o1.getValue() / o2.getValue());
+                o1.setName(o1.getName() + "-avg");
+                return o1;
+              }
+            });
+
+            return ssc.sparkContext().parallelize(Collections.singletonList(data));
+          }
+          return null;
+        });*/
 
     JavaDStream<ObservationData> qrsStream = ecgStream
         .transform(rdd -> {
@@ -198,7 +199,7 @@ public class TestCassStreaming extends ApplicationFrame implements Serializable
         });
 
     // plot
-    qrsStream.union(ecgStream).union(cassStream.filter(o -> "r to r".equals(o.getName())))
+    qrsStream.union(ecgStream).union(cassStream.filter(o -> "r to r".equals(o.getName())))//.union(movingAvg)
         .foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
           if (rdd.count() > 0)
           {

@@ -36,7 +36,7 @@ public class TestSpark extends ApplicationFrame
     super(name);
     SparkConf conf = new SparkConf()
         .setAppName("activityRecognition")
-        .set("spark.cassandra.connection.host", "192.168.1.2")
+        .set("spark.cassandra.connection.host", "cassandra.marand.si")
         .set("spark.cassandra.connection.port", "9042")
         .setMaster("local");
     final JavaSparkContext sc = new JavaSparkContext(conf);

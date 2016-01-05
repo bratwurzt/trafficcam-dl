@@ -22,9 +22,9 @@ package si.bleedy.detectors;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import si.bleedy.data.ObservationData;
 
@@ -59,8 +59,8 @@ public class wQRS implements Serializable
   private double lbuf[];
   private long ebuf[];
 
-  private double sps = 250;			     /* sampling frequency, in Hz (SR) */
-  private double samplingInterval = 1 / sps, max, min, onset;          /* sampling interval, in milliseconds */
+  private double m_sampleFreq = 250;			     /* sampling frequency, in Hz (SR) */
+  private double samplingInterval = 1 / m_sampleFreq, max, min, onset;          /* sampling interval, in milliseconds */
   private int i, minutes = 0, timer, vflag = 0;
 
   private int EyeClosing;                  /* eye-closing period, related to SR */
@@ -76,39 +76,39 @@ public class wQRS implements Serializable
   private long from = 0L, next_minute, spm, t, tj, tpq, to = 0L, tt, t1;
 
   private long sampleNo, lastQRSSampleNo;
-  private int lastObsIndex;
+  //  private int lastObsIndex;
   private double time;
   private double Yn, Yn1, Yn2;
 
-  private int SAMBUFLN = (int)sps / 2;
+  private int SAMBUFLN = (int)m_sampleFreq / 2;
   private double sampletab[];
   private double dytab[];
   private double ltransf[];
   private boolean NoRefractoryPeriod = true;
   private long timerRefactory = 0;
-  private long lastTimestamp = 0;
+  private long lastTimestamp = 0, firstTimestamp = 0;
   private boolean NoFlagLTransf = true;
   private List<Long> m_lastTimestamps = new ArrayList<>();
 
   public void init()
   {
-    sps = 250;
+    m_sampleFreq = 250;
     sampleNo = 0;
     time = 0;
-    samplingInterval = 1000.0 / sps;
-    lfsc = 1.25 * gain * gain / sps;	/* length function scale constant */
-    spm = (long)Math.round(60 * sps);
+    samplingInterval = 1000.0 / m_sampleFreq;
+    lfsc = 1.25 * gain * gain / m_sampleFreq;	/* length function scale constant */
+    spm = (long)Math.round(60 * m_sampleFreq);
     next_minute = from + spm;
-    LPn = (int)sps / PWFreq; 		/* The LP filter will have a notch at the
+    LPn = (int)m_sampleFreq / PWFreq; 		/* The LP filter will have a notch at the
           power line (mains) frequency */
     if (LPn > 8)
     {
       LPn = 8;	/* avoid filtering too agressively */
     }
     LP2n = 2 * LPn;
-    EyeClosing = (int)Math.round(sps * EYE_CLS); /* set eye-closing period */
-    ExpectPeriod = (int)Math.round(sps * NDP);	/* maximum expected RR interval */
-    LTwindow = (int)(sps * MaxQRSw);   /* length transform window size */
+    EyeClosing = (int)Math.round(m_sampleFreq * EYE_CLS); /* set eye-closing period */
+    ExpectPeriod = (int)Math.round(m_sampleFreq * NDP);	/* maximum expected RR interval */
+    LTwindow = (int)(m_sampleFreq * MaxQRSw);   /* length transform window size */
 
     Yn = 0;
     Yn1 = 0;
@@ -238,11 +238,15 @@ public class wQRS implements Serializable
     for (int i = 0; i < collect.size(); i++)
     {
       ObservationData sample = collect.get(i);
+      if (firstTimestamp == 0)
+      {
+        firstTimestamp = sample.getTimestamp();
+      }
       sampletab[(int)(sampleNo % SAMBUFLN)] = gain * sample.getValue();
       ltsamp(sampleNo);
 
 		/* Average the first 8 seconds of the length-transformed samples
-		to determine the initial thresholds Ta and T0. The number of samples
+    to determine the initial thresholds Ta and T0. The number of samples
 		in the average is limited to half of the ltsamp buffer if the sampling
 		frequency exceeds about 2 KHz. */
       if (time < 8.0)
@@ -252,7 +256,7 @@ public class wQRS implements Serializable
       else if (time == 8.0)
       {
         T0 += ltransf[(int)(sampleNo % SAMBUFLN)];
-        T0 /= (8 * sps);
+        T0 /= (8 * m_sampleFreq);
         Ta = 3 * T0;
 
         T1 = 2 * T0; //JOs not sure this is right...was 2*T0
@@ -280,7 +284,6 @@ public class wQRS implements Serializable
         {	/* found a possible QRS near t */
           timer = 0; /* used for counting the time after previous QRS */
           lastQRSSampleNo = sampleNo;
-          lastObsIndex = i;
           NoFlagLTransf = false;
           max = ltransf[(int)(sampleNo % SAMBUFLN)];
           min = ltransf[(int)(sampleNo % SAMBUFLN)];
@@ -316,70 +319,32 @@ public class wQRS implements Serializable
                   ltransf[(int)((tt - 2) % SAMBUFLN)] - ltransf[(int)((tt - 3) % SAMBUFLN)] < onset &&
                   ltransf[(int)((tt - 3) % SAMBUFLN)] - ltransf[(int)((tt - 4) % SAMBUFLN)] < onset)
               {
-                tpq = tt - LP2n;  // account for phase shift
+                tpq = tt + LP2n;  // account for phase shift
                 NoRefractoryPeriod = false;
-                timerRefactory = (long)(0.25 * sps);
+                timerRefactory = (long)(0.25 * m_sampleFreq);
                 if (lastQRSSampleNo != tpq)
                 {
-                  if (lastQRSSampleNo > tpq)
-                  {
-                    lastObsIndex = lastObsIndex - (int)(lastQRSSampleNo - tpq);
-                  }
-                  //else
-                  //{
-                  //  lastObsIndex = lastObsIndex + (int)(tpq - lastQRSSampleNo);
-                  //}
-                  lastQRSSampleNo = tpq;
+//                  lastQRSSampleNo = tpq;
                 }
                 // Adjust thresholds */
                 Ta += (max - Ta) / 10;
                 T1 = Ta / 3;
 
                 //save QRS in text file
-                if (lastObsIndex > 0)
+                if (time > 8.0)
                 {
                   try
                   {
-                    qrsTimes.add(new ObservationData("qrs", "bool", collect.get(lastObsIndex - 1).getTimestamp(), 0));
-                    qrsTimes.add(new ObservationData("qrs", "bool", collect.get(lastObsIndex).getTimestamp(), 1));
-                    qrsTimes.add(new ObservationData("qrs", "bool", collect.get(lastObsIndex + 1).getTimestamp(), 0));
+                    long time = firstTimestamp + 4 * lastQRSSampleNo;
+                    qrsTimes.add(new ObservationData("qrs", "bool", time - 4, 0));
+                    qrsTimes.add(new ObservationData("qrs", "bool", time, 1));
+                    qrsTimes.add(new ObservationData("qrs", "bool", time + 4, 0));
                   }
                   catch (Exception e)
                   {
                     e.printStackTrace();
                   }
                 }
-                //else if (lastObsIndex < 0)
-                //{
-                //  int normIndex = -1 * lastObsIndex;
-                //  if (m_lastTimestamps.size() > normIndex + 1)
-                //  {
-                //    try
-                //    {
-                //      qrsTimes.add(new ObservationData("qrs", "bool", m_lastTimestamps.get(normIndex + 1), 0));
-                //      qrsTimes.add(new ObservationData("qrs", "bool", m_lastTimestamps.get(normIndex), 1));
-                //      qrsTimes.add(new ObservationData("qrs", "bool", m_lastTimestamps.get(normIndex - 1), 0));
-                //    }
-                //    catch (Exception e)
-                //    {
-                //      e.printStackTrace();
-                //    }
-                //  }
-                //}
-                else
-                {
-                  System.out.println();
-                }
-                //try
-                //{
-                //  QrsOutput.write(strQrsOutput);
-                //  QrsOutput.newLine();
-                //  QrsOutput.flush();
-                //}
-                //catch (IOException e3)
-                //{
-                //  System.err.print("Could not write QRS output file.");
-                //}
               }
               tt--;
             }
@@ -407,7 +372,7 @@ public class wQRS implements Serializable
       }
 
       //increment sampleIndex and time
-      time += lastTimestamp == 0 ? 1 / (sps) : sample.getTimestamp() - lastTimestamp;
+      time += 1 / (m_sampleFreq);
       sampleNo++;
       lastTimestamp = sample.getTimestamp();
     }
