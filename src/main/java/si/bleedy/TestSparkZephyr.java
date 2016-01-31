@@ -55,13 +55,13 @@ public class TestSparkZephyr extends ApplicationFrame
         .cassandraTable("obskeyspace", "observations");
     SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 
-    long startTime = dateFormat.parse("30.12.2015 00:20").getTime();
-    long endTime = dateFormat.parse("31.12.2015 05:20").getTime();
+    long startTime = dateFormat.parse("16.01.2016 14:30").getTime();
+    long endTime = dateFormat.parse("15.01.2016 01:30").getTime();
     Map<String, Iterable<ObservationData>> map = cassandraRowsRDD
         .where("timestamp > ?", startTime)
-        .where("timestamp < ?", endTime)
-        //.where("name in (?,?)", "gsr", "sleep")
-        //.where("name = ?", "temp")
+        //.where("timestamp < ?", endTime)
+        .where("name in (?,?)", "breathing", "ecg")
+        //.where("name = ?", "breathing")
         .map(CassandraRow::toMap)
         .map(entry -> new ObservationData(
             (String)entry.get("name"),

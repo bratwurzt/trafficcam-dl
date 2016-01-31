@@ -2,7 +2,9 @@ package si.bleedy;
 
 import java.io.Serializable;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import javax.swing.JPanel;
 
 import com.datastax.spark.connector.japi.CassandraJavaUtil;
@@ -26,6 +28,7 @@ public class SparkSaveStreaming extends JPanel implements Serializable
 {
   private static final long serialVersionUID = -4289949126909167376L;
   private float m_vcc = 5.0f, ganancia = 5.0f, RefTension = 2.98f, Ra = 4640.0f, Rc = 4719.0f, Rb = 698.0f;
+  private static final int MAX_LIMIT = 1020;
 
 //  static
 //  {
@@ -36,20 +39,38 @@ public class SparkSaveStreaming extends JPanel implements Serializable
   public SparkSaveStreaming()
   {
     SparkConf conf = new SparkConf()
-        .setAppName("heart")
+        .setAppName("zephyr")
         .set("spark.cassandra.connection.host", "cassandra.marand.si")
         .set("spark.cassandra.connection.port", "9042")
-        .setMaster("local[2]");
+        .setMaster("local[6]");
 
     // streaming
-    JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.seconds(1));
+    JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.seconds(10));
 
     JavaDStream<ObservationData> zephyrStream = ssc.receiverStream(
         new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8099)
-    )
-        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr);
+    );
 
-    CassandraStreamingJavaUtil.javaFunctions(zephyrStream)
+    // ecg
+    JavaDStream<ObservationData> filteredEcgStream = zephyrStream
+        .filter(o -> "ecg".equals(o.getName()))
+        .transform(rdd -> {
+          return ssc.sparkContext().parallelize(fillMissingSamplesWithAvg(rdd.collect(), 250));
+        });
+
+    // breathing
+    JavaDStream<ObservationData> filteredBreathingStream = zephyrStream
+        .filter(o -> "breathing".equals(o.getName()))
+        .transform(rdd -> {
+          return ssc.sparkContext().parallelize(fillMissingSamplesWithAvg(rdd.collect(), 18));
+        });
+
+    JavaDStream<ObservationData> union = zephyrStream
+        .filter(o -> !"ecg".equals(o.getName()) && !"breathing".equals(o.getName()))
+        .union(filteredEcgStream)
+        .union(filteredBreathingStream);
+
+    CassandraStreamingJavaUtil.javaFunctions(union)
         .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
         .saveToCassandra();
 
@@ -144,6 +165,88 @@ public class SparkSaveStreaming extends JPanel implements Serializable
 
     ssc.start();
     ssc.awaitTermination();
+  }
+
+  private List<ObservationData> fillMissingSamplesWithAvg(List<ObservationData> collect, int sampleFreq)
+  {
+    List<ObservationData> returnList = new ArrayList<>();
+
+    for (int i = 0; i < collect.size(); i++)
+    {
+      ObservationData data = collect.get(i);
+      int sampleTimeDiffMillis = 1000 / sampleFreq;
+
+      if (i > 0 && i < collect.size() - 1)
+      {
+        ObservationData previousData = collect.get(i - 1);
+        ObservationData nextData = collect.get(i + 1);
+
+        if (data.getValue() > MAX_LIMIT)
+        {
+          data.setValue(getValueAvg(data.getValue(), previousData.getValue(),nextData.getValue()));
+        }
+
+        int timeDiff = (int)(data.getTimestamp() - previousData.getTimestamp()) - sampleTimeDiffMillis;
+        if (timeDiff > 0)
+        {
+          for (int j = sampleTimeDiffMillis; j <= timeDiff; j += sampleTimeDiffMillis)
+          {
+            returnList.add(
+                new ObservationData(
+                    data.getName(),
+                    data.getUnit(),
+                    previousData.getTimestamp() + j,
+                    getValueAvg(data.getValue(), previousData.getValue(), data.getValue()))
+            );
+          }
+        }
+        returnList.add(data);
+      }
+      else if (i == 0)
+      {
+        ObservationData nextData = collect.get(i + 1);
+        if (data.getValue() > MAX_LIMIT && nextData.getValue() < MAX_LIMIT)
+        {
+          data.setValue(nextData.getValue());
+        }
+        returnList.add(data);
+      }
+      else
+      {
+        ObservationData previousData = collect.get(i - 1);
+        if (data.getValue() > MAX_LIMIT && previousData.getValue() < MAX_LIMIT)
+        {
+          data.setValue(previousData.getValue());
+        }
+        int timeDiff = (int)(data.getTimestamp() - previousData.getTimestamp()) - sampleTimeDiffMillis;
+        if (timeDiff > 0 && previousData.getValue() < MAX_LIMIT && data.getValue() < MAX_LIMIT)
+        {
+          for (int j = sampleTimeDiffMillis; j <= timeDiff; j += sampleTimeDiffMillis)
+          {
+            returnList.add(new ObservationData(data.getName(), data.getUnit(), data.getTimestamp() + j, (previousData.getValue() + data.getValue()) / 2));
+          }
+        }
+        returnList.add(data);
+      }
+    }
+    return returnList;
+  }
+
+  private double getValueAvg(double currentValue, double previousValue, double nextValue)
+  {
+    if (previousValue < 1020 && nextValue < 1020)
+    {
+      return (previousValue + nextValue) / 2;
+    }
+    else if (previousValue < 1020)
+    {
+      return previousValue;
+    }
+    else if (nextValue < 1020)
+    {
+      return nextValue;
+    }
+    return currentValue;
   }
 
   private ObservationData computeConductance(int gsrAnalog, long timestamp)

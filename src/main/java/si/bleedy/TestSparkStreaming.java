@@ -6,7 +6,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import javax.swing.*;
 
@@ -21,7 +20,6 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
@@ -43,8 +41,6 @@ import org.jfree.ui.RefineryUtilities;
 import com.google.common.collect.Iterables;
 
 import si.bleedy.data.ObservationData;
-import si.bleedy.runnable.IOTTCPReceiver;
-import si.bleedy.runnable.IOTUDPReceiver;
 
 /**
  * @author bratwurzt

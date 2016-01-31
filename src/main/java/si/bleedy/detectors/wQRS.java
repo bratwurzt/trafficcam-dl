@@ -88,7 +88,7 @@ public class wQRS implements Serializable
   private long timerRefactory = 0;
   private long lastTimestamp = 0, firstTimestamp = 0;
   private boolean NoFlagLTransf = true;
-  private List<Long> m_lastTimestamps = new ArrayList<>();
+  //private List<Long> m_lastTimestamps = new ArrayList<>();
 
   public void init()
   {
@@ -99,8 +99,7 @@ public class wQRS implements Serializable
     lfsc = 1.25 * gain * gain / m_sampleFreq;	/* length function scale constant */
     spm = (long)Math.round(60 * m_sampleFreq);
     next_minute = from + spm;
-    LPn = (int)m_sampleFreq / PWFreq; 		/* The LP filter will have a notch at the
-          power line (mains) frequency */
+    LPn = (int)m_sampleFreq / PWFreq; 		/* The LP filter will have a notch at the power line (mains) frequency */
     if (LPn > 8)
     {
       LPn = 8;	/* avoid filtering too agressively */
@@ -211,30 +210,11 @@ public class wQRS implements Serializable
       aet += dytab[(int)((t) % SAMBUFLN)] - Math.sqrt(lfsc);
       ltransf[(int)(t % SAMBUFLN)] = aet;
     }
-
-    //subtract the value of sqrt(c)*LTwindow....JOs
-    //ltransf[(int)(t%SAMBUFLN)]-=Math.sqrt(lfsc)*LTwindow;
-
-    if (DEBUG)
-    {
-      String strLtransfOutput = sampleNo + " " + sampletab[(int)(t % SAMBUFLN)] + " " + dy + " " + ltransf[(int)(t % SAMBUFLN)];
-      try
-      {
-        ltransf_out_log.write(strLtransfOutput);
-        ltransf_out_log.newLine();
-        ltransf_out_log.flush();
-      }
-      catch (IOException e3)
-      {
-        System.err.print("Could not write band pass debug output file.");
-      }
-    }
   }
 
   synchronized public List<ObservationData> getResult(List<ObservationData> collect)
   {
     List<ObservationData> qrsTimes = new ArrayList<>();
-    //Read the txt file as a stream
     for (int i = 0; i < collect.size(); i++)
     {
       ObservationData sample = collect.get(i);
@@ -279,7 +259,6 @@ public class wQRS implements Serializable
 		/* Compare a length-transformed sample against T1. */
       if (NoFlagLTransf && NoRefractoryPeriod)
       {
-
         if (ltransf[(int)(sampleNo % SAMBUFLN)] > T1)
         {	/* found a possible QRS near t */
           timer = 0; /* used for counting the time after previous QRS */
@@ -322,29 +301,27 @@ public class wQRS implements Serializable
                 tpq = tt + LP2n;  // account for phase shift
                 NoRefractoryPeriod = false;
                 timerRefactory = (long)(0.25 * m_sampleFreq);
-                if (lastQRSSampleNo != tpq)
-                {
-//                  lastQRSSampleNo = tpq;
-                }
+                lastQRSSampleNo = tpq;
+
                 // Adjust thresholds */
                 Ta += (max - Ta) / 10;
                 T1 = Ta / 3;
 
-                //save QRS in text file
-                if (time > 8.0)
-                {
+                //save QRS
+                //if (time > 8.0)
+                //{
                   try
                   {
-                    long time = firstTimestamp + 4 * lastQRSSampleNo;
-                    qrsTimes.add(new ObservationData("qrs", "bool", time - 4, 0));
-                    qrsTimes.add(new ObservationData("qrs", "bool", time, 1));
-                    qrsTimes.add(new ObservationData("qrs", "bool", time + 4, 0));
+                    long ttime = firstTimestamp + (4 * lastQRSSampleNo);
+                    qrsTimes.add(new ObservationData("qrs", "bool", ttime - 4, 0));
+                    qrsTimes.add(new ObservationData("qrs", "bool", ttime, 1));
+                    qrsTimes.add(new ObservationData("qrs", "bool", ttime + 4, 0));
                   }
                   catch (Exception e)
                   {
                     e.printStackTrace();
                   }
-                }
+                //}
               }
               tt--;
             }
@@ -372,15 +349,15 @@ public class wQRS implements Serializable
       }
 
       //increment sampleIndex and time
-      time += 1 / (m_sampleFreq);
+      time += 1 / m_sampleFreq;
       sampleNo++;
       lastTimestamp = sample.getTimestamp();
     }
-    m_lastTimestamps.clear();
-    for (int i = collect.size() - 1; i > collect.size() - 11; i--)
-    {
-      m_lastTimestamps.add(collect.get(i).getTimestamp());
-    }
+    //m_lastTimestamps.clear();
+    //for (int i = collect.size() - 1; i > collect.size() - 11; i--)
+    //{
+    //  m_lastTimestamps.add(collect.get(i).getTimestamp());
+    //}
     return qrsTimes;
   }
 }
