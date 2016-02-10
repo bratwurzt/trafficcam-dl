@@ -288,8 +288,7 @@ public class wQRS implements Serializable
           if (max > min + 10)
           {
             onset = max / 100 + 2;
-            tpq = lastQRSSampleNo - 5;
-            //for (tt = lastQRStime; (tt > lastQRStime - EyeClosing/2)&&(tt>3); tt--) {
+            tpq = lastQRSSampleNo - 4;
             tt = lastQRSSampleNo;
             while ((tt > lastQRSSampleNo - EyeClosing / 2) && (tt > 3) && (NoRefractoryPeriod))
             {

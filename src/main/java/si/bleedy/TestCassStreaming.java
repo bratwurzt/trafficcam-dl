@@ -49,7 +49,7 @@ public class TestCassStreaming extends ApplicationFrame implements Serializable
   private static final Logger LOG = Logger.getLogger(TestCassStreaming.class);
   public static SparkConf conf = new SparkConf()
       .setAppName("heart")
-      .set("spark.cassandra.connection.host", "cassandra.marand.si")
+      .set("spark.cassandra.connection.host", "192.168.1.2")
       .set("spark.cassandra.connection.port", "9042")
       .setMaster("local[4]");
 
@@ -84,8 +84,8 @@ public class TestCassStreaming extends ApplicationFrame implements Serializable
   {
     CassandraReceiver receiver = new CassandraReceiver(
         StorageLevel.MEMORY_ONLY(),
-        "16.01.2016 05:50",
-        "16.01.2016 14:50",
+        "03.02.2016 00:50",
+        "03.02.2016 01:50",
         batchDuration,
         500000
     );

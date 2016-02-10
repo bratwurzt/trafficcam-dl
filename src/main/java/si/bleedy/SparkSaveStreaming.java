@@ -38,10 +38,12 @@ public class SparkSaveStreaming extends JPanel implements Serializable
 
   public SparkSaveStreaming()
   {
+
     SparkConf conf = new SparkConf()
         .setAppName("zephyr")
-        .set("spark.cassandra.connection.host", "cassandra.marand.si")
+        .set("spark.cassandra.connection.host", "192.168.1.2")
         .set("spark.cassandra.connection.port", "9042")
+        .set("spark.cassandra.connection.keep_alive_ms", "20000")
         .setMaster("local[6]");
 
     // streaming
@@ -55,6 +57,7 @@ public class SparkSaveStreaming extends JPanel implements Serializable
     JavaDStream<ObservationData> filteredEcgStream = zephyrStream
         .filter(o -> "ecg".equals(o.getName()))
         .transform(rdd -> {
+//          RDDFunctions.fromRDD(rdd.rdd(), rdd.classTag()).sliding(3).re
           return ssc.sparkContext().parallelize(fillMissingSamplesWithAvg(rdd.collect(), 250));
         });
 
@@ -73,95 +76,6 @@ public class SparkSaveStreaming extends JPanel implements Serializable
     CassandraStreamingJavaUtil.javaFunctions(union)
         .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
         .saveToCassandra();
-
-//    JavaDStream<ObservationData> cassStream = ssc.receiverStream(
-//        new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8111)
-//    );
-
-//    final JavaDStream<ObservationData> mqttStream = MQTTUtils.createStream(ssc, "tcp://192.168.1.33:1883", "temp/gsr")
-//        .map(entry -> entry.split("\\|"))
-//        .flatMap((FlatMapFunction<String[], ObservationData>)strings -> {
-//          int tempAnalog = Integer.parseInt(strings[0]);
-//          int gsrAnalog = Integer.parseInt(strings[1]);
-//          long timestamp = Long.parseLong(strings[2]);
-//          return Arrays.asList(
-//              //computeConductance(gsrAnalog, timestamp),
-//              //computeTemperature(tempAnalog, timestamp)
-//              new ObservationData("temp", "mV", timestamp, getVoltage(tempAnalog)),
-//              new ObservationData("gsr", "mV", timestamp, getVoltage(gsrAnalog))
-//          );
-//        })
-        //.window(Durations.milliseconds(1000), Durations.milliseconds(500))
-        //.transform(new Function2<JavaRDD<ObservationData>, Time, JavaRDD<ObservationData>>()  // mean over last 5 seconds
-        //{
-        //  private static final long serialVersionUID = 5455964470681463716L;
-        //
-        //  @Override
-        //  public JavaRDD<ObservationData> call(JavaRDD<ObservationData> rdd, Time time) throws Exception
-        //  {
-        //    if (rdd != null && rdd.count() > 0)
-        //    {
-        //      return rdd.sortBy((Function<ObservationData, Long>)ObservationData::getTimestamp, false, 2)
-        //          .groupBy(ObservationData::getName)
-        //          .mapValues(o -> {
-        //            if (o != null)
-        //            {
-        //              int size = Iterables.size(o);
-        //              if (size > 0)
-        //              {
-        //                double avgValue = 0;
-        //                String name1 = null;
-        //                Long maxTimestamp = 0L, minTimestamp = Long.MAX_VALUE;
-        //                for (ObservationData d : o)
-        //                {
-        //                  avgValue += d.getValue();
-        //                  if (name1 == null)
-        //                  {
-        //                    name1 = d.getName();
-        //                  }
-        //                  if (d.getTimestamp() > maxTimestamp)
-        //                  {
-        //                    maxTimestamp = d.getTimestamp();
-        //                  }
-        //                  if (d.getTimestamp() < minTimestamp)
-        //                  {
-        //                    minTimestamp = d.getTimestamp();
-        //                  }
-        //                }
-        //                avgValue /= size;
-        //                return new ObservationData(
-        //                    name1,
-        //                    "",
-        //                    (maxTimestamp + minTimestamp) / 2,
-        //                    avgValue
-        //                );
-        //              }
-        //            }
-        //            return null;
-        //          })
-        //          .values();
-        //    }
-        //    return rdd;
-        //  }
-        //})
-        ;
-
-    // filter Zephyr ecg
-    //    JavaDStream<ObservationData> filteredZephyrStream = zephyrStream
-    //        .filter((Function<ObservationData, Boolean>)ObservationData::filterZephyr);
-
-    //    zephyrStream.filter(e -> "ecg".equals(e.getName()))
-    //        .foreachRDD((Function2<JavaRDD<ObservationData>, Time, Void>)(rdd, time) -> {
-    //          if (rdd.count() > 0)
-    //          {
-    //            long count = rdd.count();
-    //            // Calculate statistics based on the content size.
-    //            long usable = rdd.filter(e -> e.getValue() < 1000).count();
-    //            long unusable = count - usable;
-    //            System.out.println(String.format("Number of ecg samples in 1 second: All: %s Usable: %s, Unusable: %s", count, usable, unusable));
-    //          }
-    //          return null;
-    //        });
 
     ssc.start();
     ssc.awaitTermination();
@@ -234,15 +148,15 @@ public class SparkSaveStreaming extends JPanel implements Serializable
 
   private double getValueAvg(double currentValue, double previousValue, double nextValue)
   {
-    if (previousValue < 1020 && nextValue < 1020)
+    if (previousValue < MAX_LIMIT && nextValue < MAX_LIMIT)
     {
       return (previousValue + nextValue) / 2;
     }
-    else if (previousValue < 1020)
+    else if (previousValue < MAX_LIMIT)
     {
       return previousValue;
     }
-    else if (nextValue < 1020)
+    else if (nextValue < MAX_LIMIT)
     {
       return nextValue;
     }
