@@ -1,47 +1,34 @@
 package si.bleedy.runnable;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.math.BigDecimal;
+import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+
+import javax.json.*;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.sql.SQLException;
 import java.util.zip.GZIPInputStream;
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonValue;
-
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.Session;
-import org.apache.log4j.Logger;
 
 /**
  * @author bratwurzt
  */
-public class GetCounterRunnable implements Runnable
+public abstract class SaveCounterToDbRunnable implements Runnable
 {
-  private static final Logger LOG = Logger.getLogger(GetCounterRunnable.class);
-  private BigDecimal m_lastUpdated = null;
+  private static final Logger LOG = Logger.getLogger(SaveCounterToDbRunnable.class);
+  private DateTime m_lastExpired = null;
+
+  protected abstract void initDb() throws IOException, ClassNotFoundException, SQLException;
+  protected abstract void closeConnections() throws SQLException;
+  protected abstract void saveToDb(String identity, DateTime timestamp, int speed, int carsPerHour, float avgSecGap) throws SQLException;
+
   @Override
   public void run()
   {
     try
     {
-      Cluster cluster = Cluster.builder().withPort(9042).addContactPoint("192.168.1.2").build();
-      Session session = cluster.connect("counterkeyspace");
-      PreparedStatement statement = session.prepare(
-          "INSERT INTO counter_timeline(counter_id, timestamp, avg_sec_gap, speed, cars_per_sec, utilization) VALUES (?,?,?,?,?,?);"
-      );
-      BoundStatement boundStatement = new BoundStatement(statement);
+      initDb();
       int i = 0;
       try
       {
@@ -50,7 +37,7 @@ public class GetCounterRunnable implements Runnable
           URL url = new URL("http://opendata.si/promet/counters/");
           HttpURLConnection connection = (HttpURLConnection)url.openConnection();
           connection.addRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-          connection.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.71 Safari/537.36");
+          connection.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36");
           connection.addRequestProperty("Host", url.getHost());
           connection.addRequestProperty("Referer", url.toString());
           connection.addRequestProperty("Accept-Encoding", "gzip, deflate, sdch");
@@ -63,14 +50,15 @@ public class GetCounterRunnable implements Runnable
             try (JsonReader reader = Json.createReader(new StringReader(response)))
             {
               JsonObject object = reader.readObject();
-              BigDecimal updated = ((JsonNumber)object.get("updated")).bigDecimalValue();
-              if (!updated.equals(m_lastUpdated))
+              final DateTime expires = new DateTime(object.getString("Expires"));
+              if (!expires.equals(m_lastExpired))
               {
-                processJson(object, session, boundStatement);
+                processJson(object);
                 LOG.info(++i + ". inserted.");
-                m_lastUpdated = updated;
+                m_lastExpired = expires;
               }
-              Thread.sleep(180000);
+              final long millisToSleep = expires.minus(DateTime.now().getMillis()).getMillis();
+              Thread.sleep(millisToSleep < 0 ? 180000 : millisToSleep);
             }
             catch (Exception e)
             {
@@ -92,46 +80,68 @@ public class GetCounterRunnable implements Runnable
       }
       finally
       {
-        cluster.close();
+        closeConnections();
       }
     }
-    catch (IOException e)
+    catch (Exception e)
     {
       e.printStackTrace();
     }
   }
 
-  private void processJson(JsonObject object, Session session, BoundStatement statement)
+  private void processJson(JsonObject object) throws SQLException
   {
-    for (JsonValue value : (JsonArray)((JsonObject)object.get("feed")).get("entry"))
+    final DateTime modifiedTime = new DateTime(object.getString("ModifiedTime"));
+    for (JsonValue value : object.getJsonArray("Contents").getJsonObject(0).getJsonObject("Data").getJsonArray("Items"))
     {
       JsonObject st = (JsonObject)value;
-      JsonValue pasOpisJsonValue = st.get("stevci_pasOpis");
-      String pasOpis = null;
-      if (pasOpisJsonValue != null && !pasOpisJsonValue.toString().equals("null"))
+
+      final JsonNumber y_wgs = st.getJsonNumber("y_wgs");
+      final JsonNumber x_wgs = st.getJsonNumber("x_wgs");
+      for (JsonValue data : st.getJsonArray("Data"))
       {
-        pasOpis = st.getString("stevci_pasOpis");
-      }
-      String identity = st.getJsonNumber("stevci_geoY_wgs") + " " + st.getJsonNumber("stevci_geoX_wgs") + " " + st.getString("id");
-      if (pasOpis != null)
-      {
-        identity += " " + pasOpis;
-      }
-      BigDecimal timestamp = st.getJsonNumber("updated").bigDecimalValue();
-      int speed = st.getInt("stevci_hit");
-      int carsPerHour = st.getInt("stevci_stev");
-      float avgSecGap = Float.valueOf(st.getString("stevci_gap").replace(",", "."));
-      float utilization = (float)(st.getJsonNumber("stevci_occ").doubleValue() / 10f);
-      try
-      {
-        session.execute(statement.bind(identity, timestamp.longValue(), avgSecGap, speed, carsPerHour, utilization));
-      }
-      catch (Exception e)
-      {
-        e.printStackTrace();
+        JsonObject node = (JsonObject) data;
+        String identity = y_wgs + "_" + x_wgs + "_" + node.getString("Id");
+        final JsonObject properties = node.getJsonObject("properties");
+        String pasOpisJsonValue = properties.getString("stevci_pasOpis");
+        String pasOpis = null;
+        if (pasOpisJsonValue != null && !pasOpisJsonValue.toString().equals("null"))
+        {
+          pasOpis = properties.getString("stevci_pasOpis");
+        }
+        if (pasOpis != null)
+        {
+          identity += "_" + pasOpis;
+        }
+        int speed = 0;
+        int carsPerHour = 0;
+        try
+        {
+          speed = Integer.parseInt(properties.getString("stevci_hit"));
+        }
+        catch (NumberFormatException ignored)
+        {
+        }
+        try
+        {
+          carsPerHour = Integer.parseInt(properties.getString("stevci_stev"));
+        }
+        catch (NumberFormatException ignored)
+        {
+        }
+        float avgSecGap = 999;
+        try
+        {
+          avgSecGap = Float.valueOf(properties.getString("stevci_gap").replace(",", "."));
+        }
+        catch (NumberFormatException ignored)
+        {
+        }
+        saveToDb(identity, modifiedTime, speed, carsPerHour, avgSecGap);
       }
     }
   }
+
 
   private String readResponse(InputStream ins, HttpURLConnection connection) throws IOException
   {

@@ -1,0 +1,68 @@
+CREATE USER bleedah WITH PASSWORD 'password';
+
+
+CREATE database counterkeyspace;
+
+GRANT ALL PRIVILEGES ON DATABASE counterkeyspace to bleedah;
+
+\c counterkeyspace
+
+CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+select setup_timescaledb();
+
+CREATE TABLE counter_timeline (
+  time        TIMESTAMP WITH TIME ZONE NOT NULL,
+  counter_id  TEXT                     NOT NULL,
+  avg_sec_gap FLOAT           NULL,
+  speed       INTEGER         NULL,
+  cars_per_sec INTEGER         NULL
+);
+
+SELECT create_hypertable('counter_timeline', 'time');
+
+CREATE INDEX ON counter_timeline (counter_id, time DESC);
+
+CREATE INDEX ON counter_timeline (time DESC, utilization);
+
+INSERT INTO counter_timeline(counter_id, time, avg_sec_gap, speed, cars_per_sec)
+  VALUES (?,?,?,?,?);
+
+
+
+CREATE database obskeyspace;
+\c obskeyspace
+
+CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+
+select setup_timescaledb();
+
+CREATE TABLE observations (
+  time        TIMESTAMP WITH TIME ZONE NOT NULL,
+  name  TEXT                     NOT NULL,
+  unit  TEXT                     NOT NULL,
+  value  TEXT                     NOT NULL
+);
+
+SELECT create_hypertable('observations', 'time');
+
+CREATE INDEX ON counter_timeline (name, time DESC);
+
+
+INSERT INTO observations(name, unit, timestamp, value)
+		VALUES ();
+
+CREATE TABLE sleep(
+	timestamp_start bigint,
+	from_time bigint,
+	to_time bigint,
+	sleep_hours float,
+	sleep_cycles int,
+	sleep_deep float,
+	PRIMARY KEY(timestamp_start)
+)
+;
+
+INSERT INTO sleep(id, from_time, to_time, sleep_hours, sleep_cycles, sleep_deep)
+		VALUES ();

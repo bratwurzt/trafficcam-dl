@@ -4,7 +4,8 @@ import java.net.URL;
 
 import org.apache.log4j.PropertyConfigurator;
 
-import si.bleedy.runnable.GetCounterRunnable;
+import si.bleedy.runnable.SaveCounterToCassandraRunnable;
+import si.bleedy.runnable.SaveCounterToTimescaleRunnable;
 
 /**
  * @author bratwurzt
@@ -18,6 +19,6 @@ public class TestGetCounters
   }
   public static void main(String[] args)
   {
-    new Thread(new GetCounterRunnable()).start();
+    new Thread(new SaveCounterToTimescaleRunnable()).start();
   }
 }
