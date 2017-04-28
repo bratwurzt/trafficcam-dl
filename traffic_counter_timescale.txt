@@ -1,30 +1,35 @@
-CREATE USER bleedah WITH PASSWORD 'password';
+sudo -u postgres psql
 
+CREATE USER bleedah WITH PASSWORD 'password';
+ALTER USER bleedah WITH SUPERUSER;
 
 CREATE database counterkeyspace;
+ALTER DATABASE counterkeyspace OWNER TO bleedah;
 
-GRANT ALL PRIVILEGES ON DATABASE counterkeyspace to bleedah;
 
-\c counterkeyspace
 
-CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+\q
+
+psql bleedah -h localhost -d counterkeyspace
+
 CREATE EXTENSION IF NOT EXISTS postgis;
 
-select setup_timescaledb();
-
 CREATE TABLE counter_timeline (
-  time        TIMESTAMP WITH TIME ZONE NOT NULL,
+  time        TIMESTAMPTZ NOT NULL,
   counter_id  TEXT                     NOT NULL,
   avg_sec_gap FLOAT           NULL,
   speed       INTEGER         NULL,
   cars_per_sec INTEGER         NULL
 );
 
+SELECT AddGeometryColumn('counter_timeline','geom','4326','POINT',2);
+GRANT ALL PRIVILEGES ON DATABASE counterkeyspace to bleedah;
+GRANT ALL PRIVILEGES ON TABLE counter_timeline to bleedah;
+
+CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+select setup_timescaledb();
 SELECT create_hypertable('counter_timeline', 'time');
 
-CREATE INDEX ON counter_timeline (counter_id, time DESC);
-
-CREATE INDEX ON counter_timeline (time DESC, utilization);
 
 INSERT INTO counter_timeline(counter_id, time, avg_sec_gap, speed, cars_per_sec)
   VALUES (?,?,?,?,?);

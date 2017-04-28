@@ -32,7 +32,7 @@ public class SaveCounterToCassandraRunnable extends SaveCounterToDbRunnable
   }
 
   @Override
-  protected void saveToDb(String identity, DateTime timestamp, int speed, int carsPerHour, float avgSecGap)
+  protected void saveToDb(String identity, DateTime timestamp, int speed, int carsPerHour, float avgSecGap, double xCoordinates, double yCoordinates)
   {
     try
     {
