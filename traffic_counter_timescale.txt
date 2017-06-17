@@ -16,7 +16,7 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 
 CREATE TABLE counter_timeline (
   time        TIMESTAMPTZ NOT NULL,
-  counter_id  TEXT                     NOT NULL,
+  counter_id  INTEGER NOT NULL,
   avg_sec_gap FLOAT           NULL,
   speed       INTEGER         NULL,
   cars_per_sec INTEGER         NULL
@@ -35,24 +35,18 @@ INSERT INTO counter_timeline(counter_id, time, avg_sec_gap, speed, cars_per_sec)
   VALUES (?,?,?,?,?);
 
 
+CREATE SEQUENCE counter_seq START 1;
 
-CREATE database obskeyspace;
-\c obskeyspace
+CREATE TABLE counter (id, code, location) AS
+SELECT DISTINCT ON (ct.counter_id, ct.geom) nextval('counter_seq') as id, ct.counter_id as code, ct.geom as location FROM counter_timeline ct;
 
-CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+CREATE INDEX counter_code_eq ON counter USING hash (code);
 
-select setup_timescaledb();
 
-CREATE TABLE observations (
-  time        TIMESTAMP WITH TIME ZONE NOT NULL,
-  name  TEXT                     NOT NULL,
-  unit  TEXT                     NOT NULL,
-  value  TEXT                     NOT NULL
-);
+CREATE TABLE counter AS SELECT DISTINCT ON (ct.counter_id, ct.geom) nextval('counter_seq') as 'id', ct.counter_id as 'code', ct.geom as 'location' FROM counter_timeline ct;
 
-SELECT create_hypertable('observations', 'time');
 
-CREATE INDEX ON counter_timeline (name, time DESC);
+GRANT ALL PRIVILEGES ON TABLE counter to bleedah;
 
 
 INSERT INTO observations(name, unit, timestamp, value)

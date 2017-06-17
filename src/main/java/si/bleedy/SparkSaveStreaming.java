@@ -1,25 +1,19 @@
 package si.bleedy;
 
-import java.io.Serializable;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import javax.swing.JPanel;
-
 import com.datastax.spark.connector.japi.CassandraJavaUtil;
 import com.datastax.spark.connector.japi.CassandraStreamingJavaUtil;
-import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.function.FlatMapFunction;
-import org.apache.spark.api.java.function.Function;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.mqtt.MQTTUtils;
 import si.bleedy.data.ObservationData;
 import si.bleedy.runnable.IOTTCPReceiver;
+
+import javax.swing.*;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author bratwurzt
@@ -36,7 +30,7 @@ public class SparkSaveStreaming extends JPanel implements Serializable
 //    PropertyConfigurator.configure(url);
 //  }
 
-  public SparkSaveStreaming()
+  public SparkSaveStreaming() throws InterruptedException
   {
 
     SparkConf conf = new SparkConf()
@@ -226,6 +220,13 @@ public class SparkSaveStreaming extends JPanel implements Serializable
 
   public static void main(String[] args)
   {
-    SparkSaveStreaming demo = new SparkSaveStreaming();
+    try
+    {
+      SparkSaveStreaming demo = new SparkSaveStreaming();
+    }
+    catch (InterruptedException e)
+    {
+      e.printStackTrace();
+    }
   }
 }

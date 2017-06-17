@@ -24,7 +24,6 @@ import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.mqtt.MQTTUtils;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
@@ -118,192 +117,192 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     setContentPane(content);
   }
 
-  private void runSpark()
+  private void runSpark() throws InterruptedException
   {
-    SparkConf conf = new SparkConf()
-        .setAppName("heart")
-        .set("spark.cassandra.connection.host", "cassandra.marand.si")
-        .set("spark.cassandra.connection.port", "9042")
-        .setMaster("local[3]");
-    // streaming
-    JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.milliseconds(1000));
-
-//    JavaDStream<ObservationData> cassStream = ssc.receiverStream(
-//        new IOTUDPReceiver(StorageLevel.MEMORY_ONLY(), 8111)
-//    );
-
-    final JavaDStream<ObservationData> mqttStream = MQTTUtils.createStream(ssc, "tcp://10.99.9.25:1883", "temp/gsr/ecg/time")
-        .map(entry -> entry.split("\\|"))
-        .flatMap((FlatMapFunction<String[], ObservationData>)strings -> {
-          int tempAnalog = Integer.parseInt(strings[0]);
-          int gsrAnalog = Integer.parseInt(strings[1]);
-          int ecgAnalog = Integer.parseInt(strings[2]);
-          long timestamp = Long.parseLong(strings[3]);
-          return Arrays.asList(
-              //computeConductance(gsrAnalog, timestamp),
-              //computeTemperature(tempAnalog, timestamp)
-              new ObservationData("temp", "mV", timestamp, getVoltage(tempAnalog)),
-              new ObservationData("gsr", "mV", timestamp, getVoltage(gsrAnalog)),
-              new ObservationData("ecg", "mV", timestamp, getVoltage(ecgAnalog))
-          );
-        });
-    //final FastFourierTransformer transformer = new FastFourierTransformer(DftNormalization.STANDARD);
-    //JavaDStream<ObservationData> museStream = ssc.receiverStream(
-    //    new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8100)
-    //);
-    //// compute Muse FP arousal and valence
-    //JavaDStream<ObservationData> eegArousalAndValenceStream = getMuseArousalValenceDStream(museStream);
-    mqttStream
-//        .window(Durations.milliseconds(500), Durations.milliseconds(100))
-//        .transform(new Function2<JavaRDD<ObservationData>, Time, JavaRDD<ObservationData>>()  // mean over last 5 seconds
-//        {
-//          private static final long serialVersionUID = 5455964470681463716L;
+//    SparkConf conf = new SparkConf()
+//        .setAppName("heart")
+//        .set("spark.cassandra.connection.host", "cassandra.marand.si")
+//        .set("spark.cassandra.connection.port", "9042")
+//        .setMaster("local[3]");
+//    // streaming
+//    JavaStreamingContext ssc = new JavaStreamingContext(conf, Durations.milliseconds(1000));
 //
-//          @Override
-//          public JavaRDD<ObservationData> call(JavaRDD<ObservationData> rdd, Time time) throws Exception
+////    JavaDStream<ObservationData> cassStream = ssc.receiverStream(
+////        new IOTUDPReceiver(StorageLevel.MEMORY_ONLY(), 8111)
+////    );
+//
+////    final JavaDStream<ObservationData> mqttStream = MQTTUtils.createStream(ssc, "tcp://10.99.9.25:1883", "temp/gsr/ecg/time")
+////        .map(entry -> entry.split("\\|"))
+////        .flatMap((FlatMapFunction<String[], ObservationData>)strings -> {
+////          int tempAnalog = Integer.parseInt(strings[0]);
+////          int gsrAnalog = Integer.parseInt(strings[1]);
+////          int ecgAnalog = Integer.parseInt(strings[2]);
+////          long timestamp = Long.parseLong(strings[3]);
+////          return Arrays.asList(
+////              //computeConductance(gsrAnalog, timestamp),
+////              //computeTemperature(tempAnalog, timestamp)
+////              new ObservationData("temp", "mV", timestamp, getVoltage(tempAnalog)),
+////              new ObservationData("gsr", "mV", timestamp, getVoltage(gsrAnalog)),
+////              new ObservationData("ecg", "mV", timestamp, getVoltage(ecgAnalog))
+////          );
+////        });
+//    //final FastFourierTransformer transformer = new FastFourierTransformer(DftNormalization.STANDARD);
+//    //JavaDStream<ObservationData> museStream = ssc.receiverStream(
+//    //    new IOTTCPReceiver(StorageLevel.MEMORY_ONLY(), 8100)
+//    //);
+//    //// compute Muse FP arousal and valence
+//    //JavaDStream<ObservationData> eegArousalAndValenceStream = getMuseArousalValenceDStream(museStream);
+////    mqttStream
+////        .window(Durations.milliseconds(500), Durations.milliseconds(100))
+////        .transform(new Function2<JavaRDD<ObservationData>, Time, JavaRDD<ObservationData>>()  // mean over last 5 seconds
+////        {
+////          private static final long serialVersionUID = 5455964470681463716L;
+////
+////          @Override
+////          public JavaRDD<ObservationData> call(JavaRDD<ObservationData> rdd, Time time) throws Exception
+////          {
+////            if (rdd.count() > 0)
+////            {
+////              return getRollingMeanJavaRDD(rdd);
+////            }
+////            return rdd;
+////          }
+////        })
+//        .foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
+//          if (rdd.count() > 0)
 //          {
-//            if (rdd.count() > 0)
+//            for (ObservationData o : rdd.collect())
 //            {
-//              return getRollingMeanJavaRDD(rdd);
+//              int index = getIndex(o.getGrouping());
+//              synchronized (datasets)
+//              {
+//                if (index >= 0 && index < SUBPLOT_COUNT)
+//                {
+//                  try
+//                  {
+//                    lastValue[index] = o.getValue();
+//                    datasets[index].getSeries(0).add(new Millisecond(new Date(o.getTimestamp())), lastValue[index]);
+//                  }
+//                  catch (Exception e)
+//                  {
+//                    e.printStackTrace();
+//                  }
+//                }
+//              }
 //            }
-//            return rdd;
 //          }
-//        })
-        .foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
-          if (rdd.count() > 0)
-          {
-            for (ObservationData o : rdd.collect())
-            {
-              int index = getIndex(o.getGrouping());
-              synchronized (datasets)
-              {
-                if (index >= 0 && index < SUBPLOT_COUNT)
-                {
-                  try
-                  {
-                    lastValue[index] = o.getValue();
-                    datasets[index].getSeries(0).add(new Millisecond(new Date(o.getTimestamp())), lastValue[index]);
-                  }
-                  catch (Exception e)
-                  {
-                    e.printStackTrace();
-                  }
-                }
-              }
-            }
-          }
-          return null;
-        });
-    //JavaDStream<ObservationData> zephyrStats = zephyrStream.filter(e -> "ecg".equals(e.getName()))
-    //    .transform(rdd -> {
-    //      try
-    //      {
-    //        if (rdd != null && rdd.count() > 0)
-    //        {
-    //          long count = rdd.count();
-    //          long usable = rdd.filter(e -> e.getValue() < 1000).count();
-    //          JavaRDD<Long> timestamps = rdd.map(ObservationData::getTimestamp).cache();
-    //          long maxTimestamp = timestamps.max(Comparator.naturalOrder());
-    //          return sc.parallelize(Arrays.asList(new ObservationData(
-    //                  "ecg_samples",
-    //                  "usable",
-    //                  maxTimestamp,
-    //                  usable
-    //              ),
-    //              new ObservationData(
-    //                  "ecg_samples",
-    //                  "count",
-    //                  maxTimestamp,
-    //                  count
-    //              )));
-    //        }
-    //      }
-    //      catch (Exception e)
-    //      {
-    //        e.printStackTrace();
-    //      }
-    //      return null;
-    //    });
-
-    // Onion of everything!
-    //    JavaDStream<ObservationData> union = filteredZephyrStream
-    //.union(museStream)
-    //.union(eegArousalAndValenceStream)
-    //.union(zephyrStats)
-    ;
-    //    CassandraStreamingJavaUtil.javaFunctions(union)
-    //        .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
-    //        .saveToCassandra();
-
-    //    JavaDStream<ObservationData> windowDStream = cr.window(Durations.seconds(10), Durations.seconds(2));
-    //    zephyrStream.mapToPair((PairFunction<ObservationData, String, ObservationData>)observationData -> new Tuple2<>(observationData.getGrouping(), observationData))
-    //        .foreachRDD(obs -> {
-    //          if (obs.count() > 0)
-    //          {
-
-    //            // Calculate statistics based on the content size.
-    //            JavaRDD<Long> contentSizes = obs.map(ObservationData::getContentSize).cache();
-    //            System.out.println(String.format("Content Size Avg: %s, Min: %s, Max: %s",
-    //                contentSizes.reduce(SUM_REDUCER) / contentSizes.count(),
-    //                contentSizes.min(Comparator.naturalOrder()),
-    //                contentSizes.max(Comparator.naturalOrder())));
-    //            // Any IPAddress that has accessed the server more than 10 times.
-    //            List<String> ipAddresses =
-    //                obs.mapToPair(log -> new Tuple2<>(log.getGrouping(), 1L))
-    //                    .reduceByKey(SUM_REDUCER)
-    //                    .filteredZephyrStream(tuple -> tuple._2() > 10)
-    //                    .map(Tuple2::_1)
-    //                    .take(100);
-    //            System.out.println(String.format("groups > 10 times: %s", ipAddresses));
-    //
-    //            List<Tuple2<String, Long>> topEndpoints = obs
-    //                .mapToPair(log -> new Tuple2<>(log.getGrouping(), 1L))
-    //                .reduceByKey(SUM_REDUCER)
-    //                .top(10, new ValueComparator<>(Comparator.<Long>naturalOrder()));
-    //            System.out.println(String.format("Top groups: %s", topEndpoints));
-    //          }
-    //
-    //          return null;
-    //        });
-    //    cr.foreachRDD(obs -> {
-    //      if (obs.count() > 0)
-    //      {
-    //        obs.map(new Function<ObservationData, ObservationData>()
-    //        {
-    //          @Override
-    //          public ObservationData call(ObservationData observationData) throws Exception
-    //          {
-    //            return null;
-    //          }
-    //        });
-    //
-    //
-    //        // Calculate statistics based on the content size.
-    //        JavaRDD<Long> contentSizes = obs.map(ObservationData::getContentSize).cache();
-    //        System.out.println(String.format("Content Size Avg: %s, Min: %s, Max: %s",
-    //            contentSizes.reduce(SUM_REDUCER) / contentSizes.count(),
-    //            contentSizes.min(Comparator.naturalOrder()),
-    //            contentSizes.max(Comparator.naturalOrder())));
-    //        // Any IPAddress that has accessed the server more than 10 times.
-    //        List<String> ipAddresses =
-    //            obs.mapToPair(log -> new Tuple2<>(log.getGrouping(), 1L))
-    //                .reduceByKey(SUM_REDUCER)
-    //                .filteredZephyrStream(tuple -> tuple._2() > 10)
-    //                .map(Tuple2::_1)
-    //                .take(100);
-    //        System.out.println(String.format("groups > 10 times: %s", ipAddresses));
-    //
-    //        List<Tuple2<String, Long>> topEndpoints = obs
-    //            .mapToPair(log -> new Tuple2<>(log.getGrouping(), 1L))
-    //            .reduceByKey(SUM_REDUCER)
-    //            .top(10, new ValueComparator<>(Comparator.<Long>naturalOrder()));
-    //        System.out.println(String.format("Top groups: %s", topEndpoints));
-    //      }
-    //
-    //      return null;
-    //    });
-    ssc.start();
-    ssc.awaitTermination();
+//          return null;
+//        });
+//    //JavaDStream<ObservationData> zephyrStats = zephyrStream.filter(e -> "ecg".equals(e.getName()))
+//    //    .transform(rdd -> {
+//    //      try
+//    //      {
+//    //        if (rdd != null && rdd.count() > 0)
+//    //        {
+//    //          long count = rdd.count();
+//    //          long usable = rdd.filter(e -> e.getValue() < 1000).count();
+//    //          JavaRDD<Long> timestamps = rdd.map(ObservationData::getTimestamp).cache();
+//    //          long maxTimestamp = timestamps.max(Comparator.naturalOrder());
+//    //          return sc.parallelize(Arrays.asList(new ObservationData(
+//    //                  "ecg_samples",
+//    //                  "usable",
+//    //                  maxTimestamp,
+//    //                  usable
+//    //              ),
+//    //              new ObservationData(
+//    //                  "ecg_samples",
+//    //                  "count",
+//    //                  maxTimestamp,
+//    //                  count
+//    //              )));
+//    //        }
+//    //      }
+//    //      catch (Exception e)
+//    //      {
+//    //        e.printStackTrace();
+//    //      }
+//    //      return null;
+//    //    });
+//
+//    // Onion of everything!
+//    //    JavaDStream<ObservationData> union = filteredZephyrStream
+//    //.union(museStream)
+//    //.union(eegArousalAndValenceStream)
+//    //.union(zephyrStats)
+//    ;
+//    //    CassandraStreamingJavaUtil.javaFunctions(union)
+//    //        .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
+//    //        .saveToCassandra();
+//
+//    //    JavaDStream<ObservationData> windowDStream = cr.window(Durations.seconds(10), Durations.seconds(2));
+//    //    zephyrStream.mapToPair((PairFunction<ObservationData, String, ObservationData>)observationData -> new Tuple2<>(observationData.getGrouping(), observationData))
+//    //        .foreachRDD(obs -> {
+//    //          if (obs.count() > 0)
+//    //          {
+//
+//    //            // Calculate statistics based on the content size.
+//    //            JavaRDD<Long> contentSizes = obs.map(ObservationData::getContentSize).cache();
+//    //            System.out.println(String.format("Content Size Avg: %s, Min: %s, Max: %s",
+//    //                contentSizes.reduce(SUM_REDUCER) / contentSizes.count(),
+//    //                contentSizes.min(Comparator.naturalOrder()),
+//    //                contentSizes.max(Comparator.naturalOrder())));
+//    //            // Any IPAddress that has accessed the server more than 10 times.
+//    //            List<String> ipAddresses =
+//    //                obs.mapToPair(log -> new Tuple2<>(log.getGrouping(), 1L))
+//    //                    .reduceByKey(SUM_REDUCER)
+//    //                    .filteredZephyrStream(tuple -> tuple._2() > 10)
+//    //                    .map(Tuple2::_1)
+//    //                    .take(100);
+//    //            System.out.println(String.format("groups > 10 times: %s", ipAddresses));
+//    //
+//    //            List<Tuple2<String, Long>> topEndpoints = obs
+//    //                .mapToPair(log -> new Tuple2<>(log.getGrouping(), 1L))
+//    //                .reduceByKey(SUM_REDUCER)
+//    //                .top(10, new ValueComparator<>(Comparator.<Long>naturalOrder()));
+//    //            System.out.println(String.format("Top groups: %s", topEndpoints));
+//    //          }
+//    //
+//    //          return null;
+//    //        });
+//    //    cr.foreachRDD(obs -> {
+//    //      if (obs.count() > 0)
+//    //      {
+//    //        obs.map(new Function<ObservationData, ObservationData>()
+//    //        {
+//    //          @Override
+//    //          public ObservationData call(ObservationData observationData) throws Exception
+//    //          {
+//    //            return null;
+//    //          }
+//    //        });
+//    //
+//    //
+//    //        // Calculate statistics based on the content size.
+//    //        JavaRDD<Long> contentSizes = obs.map(ObservationData::getContentSize).cache();
+//    //        System.out.println(String.format("Content Size Avg: %s, Min: %s, Max: %s",
+//    //            contentSizes.reduce(SUM_REDUCER) / contentSizes.count(),
+//    //            contentSizes.min(Comparator.naturalOrder()),
+//    //            contentSizes.max(Comparator.naturalOrder())));
+//    //        // Any IPAddress that has accessed the server more than 10 times.
+//    //        List<String> ipAddresses =
+//    //            obs.mapToPair(log -> new Tuple2<>(log.getGrouping(), 1L))
+//    //                .reduceByKey(SUM_REDUCER)
+//    //                .filteredZephyrStream(tuple -> tuple._2() > 10)
+//    //                .map(Tuple2::_1)
+//    //                .take(100);
+//    //        System.out.println(String.format("groups > 10 times: %s", ipAddresses));
+//    //
+//    //        List<Tuple2<String, Long>> topEndpoints = obs
+//    //            .mapToPair(log -> new Tuple2<>(log.getGrouping(), 1L))
+//    //            .reduceByKey(SUM_REDUCER)
+//    //            .top(10, new ValueComparator<>(Comparator.<Long>naturalOrder()));
+//    //        System.out.println(String.format("Top groups: %s", topEndpoints));
+//    //      }
+//    //
+//    //      return null;
+//    //    });
+//    ssc.start();
+//    ssc.awaitTermination();
   }
 
   private int getIndex(String name)
@@ -654,6 +653,6 @@ public class TestSparkStreaming extends ApplicationFrame implements Serializable
     demo.pack();
     RefineryUtilities.centerFrameOnScreen(demo);
     demo.setVisible(true);
-    demo.runSpark();
+//    demo.runSpark();
   }
 }

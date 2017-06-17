@@ -148,21 +148,21 @@ public class TestCassStreaming extends ApplicationFrame implements Serializable
         });
 
     // plot
-    ecgStream
-        .union(cassStream.filter(o -> "breathing".equals(o.getName())))
-        .union(cassStream.filter(o -> "r to r".equals(o.getName())))
-        .union(qrsStream)
-        .foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
-          if (rdd.count() > 0)
-          {
-            final List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
-                .groupBy(ObservationData::getGrouping)
-                .collect();
-
-            m_plotDataQueue.add(collect);
-          }
-          return null;
-        });
+//    ecgStream
+//        .union(cassStream.filter(o -> "breathing".equals(o.getName())))
+//        .union(cassStream.filter(o -> "r to r".equals(o.getName())))
+//        .union(qrsStream)
+//        .foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
+//          if (rdd.count() > 0)
+//          {
+//            final List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
+//                .groupBy(ObservationData::getGrouping)
+//                .collect();
+//
+//            m_plotDataQueue.add(collect);
+//          }
+//          return null;
+//        });
 
     ssc.start();
     ssc.awaitTermination();

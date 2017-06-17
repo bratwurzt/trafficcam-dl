@@ -1,6 +1,7 @@
 package si.bleedy.runnable;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Cluster;
@@ -32,16 +33,22 @@ public class SaveCounterToCassandraRunnable extends SaveCounterToDbRunnable
   }
 
   @Override
-  protected void saveToDb(String identity, DateTime timestamp, int speed, int carsPerHour, float avgSecGap, double xCoordinates, double yCoordinates)
+  protected void saveToDb(Long counterId, DateTime timestamp, int speed, int carsPerHour, float avgSecGap, double xCoordinates, double yCoordinates)
   {
     try
     {
-      session.execute(boundStatement.bind(identity, timestamp.getMillis(), avgSecGap, speed, carsPerHour));
+      session.execute(boundStatement.bind(counterId, timestamp.getMillis(), avgSecGap, speed, carsPerHour));
     }
     catch (Exception e)
     {
       e.printStackTrace();
     }
+  }
+
+  @Override
+  void insertNewCounter(String identity, double xCoordinates, double yCoordinates) throws SQLException
+  {
+
   }
 
   @Override

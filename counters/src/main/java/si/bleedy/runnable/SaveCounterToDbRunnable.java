@@ -10,6 +10,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -19,12 +21,13 @@ public abstract class SaveCounterToDbRunnable implements Runnable
 {
   private static final Logger LOG = LoggerFactory.getLogger(SaveCounterToDbRunnable.class);
   private DateTime m_lastExpired = null;
+  final Map<String, Long> counterMap = new HashMap<>();
 
   protected abstract void initDb() throws IOException, ClassNotFoundException, SQLException;
 
   protected abstract void closeConnections() throws SQLException;
 
-  protected abstract void   saveToDb(String identity, DateTime timestamp, int speed, int carsPerHour, float avgSecGap, double xCoordinates, double yCoordinates) throws SQLException;
+  protected abstract void saveToDb(Long counterId, DateTime timestamp, int speed, int carsPerHour, float avgSecGap) throws SQLException;
 
   protected void executeBatch() throws SQLException
   {
@@ -35,10 +38,10 @@ public abstract class SaveCounterToDbRunnable implements Runnable
   {
     try
     {
+      initDb();
       int i = 0;
       while (true)
       {
-        initDb();
         URL url = new URL("http://opendata.si/promet/counters/");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.addRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
@@ -104,7 +107,7 @@ public abstract class SaveCounterToDbRunnable implements Runnable
       final JsonNumber x_wgs = st.getJsonNumber("x_wgs");
       final double xCoordinates = x_wgs.doubleValue();
       final double yCoordinates = y_wgs.doubleValue();
-      for (JsonValue data : st.getJsonArray("Data"))
+      for (final JsonValue data : st.getJsonArray("Data"))
       {
         JsonObject node = (JsonObject) data;
         String identity = node.getString("Id");
@@ -114,10 +117,6 @@ public abstract class SaveCounterToDbRunnable implements Runnable
         if (pasOpisJsonValue != null && !pasOpisJsonValue.toString().equals("null"))
         {
           pasOpis = properties.getString("stevci_pasOpis");
-        }
-        if (pasOpis != null)
-        {
-          identity += "_" + pasOpis;
         }
         int speed = 0;
         int carsPerHour = 0;
@@ -143,11 +142,19 @@ public abstract class SaveCounterToDbRunnable implements Runnable
         catch (NumberFormatException ignored)
         {
         }
-        saveToDb(identity, modifiedTime, speed, carsPerHour, avgSecGap, xCoordinates, yCoordinates);
+        Long counterId = counterMap.get(identity);
+        if (counterId == null)
+        {
+          counterId = insertNewCounter(identity, xCoordinates, yCoordinates);
+          counterMap.put(identity, counterId);
+        }
+        saveToDb(counterId, modifiedTime, speed, carsPerHour, avgSecGap);
       }
     }
     executeBatch();
   }
+
+  abstract Long insertNewCounter(String identity, double xCoordinates, double yCoordinates) throws SQLException;
 
   private String readResponse(InputStream ins, HttpURLConnection connection) throws IOException
   {
