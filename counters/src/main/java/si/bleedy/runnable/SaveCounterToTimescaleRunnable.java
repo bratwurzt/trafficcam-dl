@@ -17,7 +17,7 @@ public class SaveCounterToTimescaleRunnable extends SaveCounterToDbRunnable
   protected void initDb() throws IOException, ClassNotFoundException, SQLException
   {
     Class.forName("org.postgresql.Driver");
-    connection = DriverManager.getConnection("jdbc:postgresql://192.168.1.7:5432/counterkeyspace", "bleedah", "password");
+    initConnection();
     statement = connection.prepareStatement(
         "SELECT code, id from counter;"
     );
@@ -33,6 +33,14 @@ public class SaveCounterToTimescaleRunnable extends SaveCounterToDbRunnable
     statement = connection.prepareStatement(
         "INSERT INTO counter_timeline(counter_id, time, avg_sec_gap, speed, cars_per_sec) VALUES (?,?,?,?,?);"
     );
+  }
+
+  protected void initConnection() throws SQLException
+  {
+    if (connection == null || connection.isClosed())
+    {
+      connection = DriverManager.getConnection("jdbc:postgresql://192.168.1.7:5432/counterkeyspace", "bleedah", "password");
+    }
   }
 
   @Override

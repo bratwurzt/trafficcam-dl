@@ -29,6 +29,8 @@ public abstract class SaveCounterToDbRunnable implements Runnable
 
   protected abstract void saveToDb(Long counterId, DateTime timestamp, int speed, int carsPerHour, float avgSecGap) throws SQLException;
 
+  protected abstract void initConnection() throws SQLException;
+
   protected void executeBatch() throws SQLException
   {
   }
@@ -42,6 +44,7 @@ public abstract class SaveCounterToDbRunnable implements Runnable
       int i = 0;
       while (true)
       {
+        initConnection();
         URL url = new URL("http://opendata.si/promet/counters/");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.addRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
