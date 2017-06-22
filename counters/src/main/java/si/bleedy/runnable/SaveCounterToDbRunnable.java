@@ -67,8 +67,7 @@ public abstract class SaveCounterToDbRunnable implements Runnable
             final DateTime expires = new DateTime(contents.getString("Expires"));
             if (!expires.equals(m_lastExpired))
             {
-              processJson(contents);
-              executeBatchDbFriendly();
+              executeBatchDbFriendly(contents);
               LOG.info(++i + ". inserted.");
               m_lastExpired = expires;
             }
@@ -161,11 +160,12 @@ public abstract class SaveCounterToDbRunnable implements Runnable
     }
   }
 
-  private void executeBatchDbFriendly() throws SQLException
+  private void executeBatchDbFriendly(JsonObject contents) throws SQLException
   {
     initConnection();
     try
     {
+      processJson(contents);
       executeBatch();
     }
     finally
@@ -176,15 +176,7 @@ public abstract class SaveCounterToDbRunnable implements Runnable
 
   private Long insertNewCounterDbFriendly(double xCoordinates, double yCoordinates, String identity, String pasOpis) throws SQLException
   {
-    initConnection();
-    try
-    {
-      return insertNewCounter(identity, xCoordinates, yCoordinates, pasOpis);
-    }
-    finally
-    {
-      closeConnections();
-    }
+    return insertNewCounter(identity, xCoordinates, yCoordinates, pasOpis);
   }
 
   abstract Long insertNewCounter(String identity, double xCoordinates, double yCoordinates, String pasOpis) throws SQLException;
