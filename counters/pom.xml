@@ -51,19 +51,21 @@
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.7</version>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>3.3.6</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <version>2.0.2</version>
-        </dependency>
     </dependencies>
 
     <build>
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ssh</artifactId>
+                <version>2.12</version>
+            </extension>
+        </extensions>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -78,7 +80,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.2</version>
+                <version>3.0.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -105,17 +107,42 @@
                         </filter>
                     </filters>
                     <artifactSet>
-                        <!--<excludes>-->
-                        <!--<exclude>org.apache.cassandra:cassandra-all:*</exclude>-->
+                        <excludes>
+                        <exclude>javax:json-api:1.0</exclude>
                         <!--<exclude>org.apache.spark:*</exclude>-->
                         <!--<exclude>org.jfree:*</exclude>-->
                         <!--<exclude>net.sourceforge.javacsv:*</exclude>-->
                         <!--<exclude>javax.json:*</exclude>-->
                         <!--<exclude>org.glassfish:*</exclude>-->
                         <!--<exclude>com.google.protobuf:*</exclude>-->
-                        <!--</excludes>-->
+                        </excludes>
                     </artifactSet>
                     <finalName>uber-${project.artifactId}-${project.version}</finalName>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>wagon-maven-plugin</artifactId>
+                <version>1.0</version>
+                <executions>
+                    <execution>
+                        <id>upload-shade-jar</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>upload</goal>
+                        </goals>
+                        <configuration>
+                            <fromDir>local.dir</fromDir>
+                            <includes>uber-${project.artifactId}-${project.version}</includes>
+                            <excludes>pom.xml</excludes>
+                            <url>scp://pi:mininova3@192.168.1.7/</url>
+                            <toDir>/home/pi/</toDir>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <fromFile>uber-${project.artifactId}-${project.version}</fromFile>
                 </configuration>
             </plugin>
         </plugins>

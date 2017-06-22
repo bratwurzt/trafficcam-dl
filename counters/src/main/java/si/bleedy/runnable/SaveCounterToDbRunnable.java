@@ -1,8 +1,8 @@
 package si.bleedy.runnable;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.json.*;
 import java.io.*;
@@ -19,7 +19,7 @@ import java.util.zip.GZIPInputStream;
  */
 public abstract class SaveCounterToDbRunnable implements Runnable
 {
-  private static final Logger LOG = LoggerFactory.getLogger(SaveCounterToDbRunnable.class);
+  private static final Logger LOG = LogManager.getLogger(SaveCounterToDbRunnable.class);
   private DateTime m_lastExpired = null;
   final Map<String, Long> counterMap = new HashMap<>();
 
@@ -27,12 +27,15 @@ public abstract class SaveCounterToDbRunnable implements Runnable
 
   protected abstract void closeConnections() throws SQLException;
 
-  protected abstract void saveToDb(Long counterId, DateTime timestamp, int speed, int carsPerHour, float avgSecGap) throws SQLException;
+  protected abstract void addBatch(Long counterId, DateTime timestamp, int speed, int carsPerHour, float avgSecGap) throws SQLException;
 
   protected abstract void initConnection() throws SQLException;
 
-  protected void executeBatch() throws SQLException
+  protected abstract void executeBatch() throws SQLException;
+
+  private void runDbAction()
   {
+
   }
 
   @Override
@@ -44,7 +47,6 @@ public abstract class SaveCounterToDbRunnable implements Runnable
       int i = 0;
       while (true)
       {
-        initConnection();
         URL url = new URL("http://opendata.si/promet/counters/");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.addRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
@@ -57,21 +59,23 @@ public abstract class SaveCounterToDbRunnable implements Runnable
         connection.connect();
         try (final InputStream is = connection.getInputStream())
         {
-          String response = readResponse(is, connection);
-          try (JsonReader reader = Json.createReader(new StringReader(response)))
+          final String response = readResponse(is, connection);
+          try (final JsonReader reader = Json.createReader(new StringReader(response)))
           {
-            JsonObject object = reader.readObject();
-            final DateTime expires = new DateTime(object.getString("Expires"));
+            final JsonObject jsonObject = reader.readObject();
+            final JsonObject contents = jsonObject.getJsonArray("Contents").getJsonObject(0);
+            final DateTime expires = new DateTime(contents.getString("Expires"));
             if (!expires.equals(m_lastExpired))
             {
-              processJson(object);
+              processJson(contents);
+              executeBatchDbFriendly();
               LOG.info(++i + ". inserted.");
               m_lastExpired = expires;
             }
             final long millisToSleep = expires.minus(DateTime.now().getMillis()).getMillis();
             Thread.sleep(millisToSleep < 0 ? 180000 : millisToSleep);
           }
-          catch (Exception e)
+          catch (final Exception e)
           {
             LOG.error("Error: ", e);
             try
@@ -85,24 +89,20 @@ public abstract class SaveCounterToDbRunnable implements Runnable
         }
         catch (IOException e)
         {
-          e.printStackTrace();
-        }
-        finally
-        {
-          closeConnections();
+          LOG.error("Error: ", e);
         }
       }
     }
     catch (Exception e)
     {
-      e.printStackTrace();
+      LOG.error("Error: ", e);
     }
   }
 
-  private void processJson(JsonObject object) throws SQLException
+  private void processJson(final JsonObject contents) throws SQLException
   {
-    final DateTime modifiedTime = new DateTime(object.getString("ModifiedTime"));
-    for (JsonValue value : object.getJsonArray("Contents").getJsonObject(0).getJsonObject("Data").getJsonArray("Items"))
+    final DateTime modifiedTime = new DateTime(contents.getString("ModifiedTime"));
+    for (final JsonValue value : contents.getJsonObject("Data").getJsonArray("Items"))
     {
       JsonObject st = (JsonObject) value;
 
@@ -115,11 +115,16 @@ public abstract class SaveCounterToDbRunnable implements Runnable
         JsonObject node = (JsonObject) data;
         String identity = node.getString("Id");
         final JsonObject properties = node.getJsonObject("properties");
-        String pasOpisJsonValue = properties.getString("stevci_pasOpis");
+        String pasOpisJsonValue = properties.getString("stevci_smerOpis");
         String pasOpis = null;
         if (pasOpisJsonValue != null && !pasOpisJsonValue.toString().equals("null"))
         {
-          pasOpis = properties.getString("stevci_pasOpis");
+          pasOpis = properties.getString("stevci_smerOpis");
+        }
+        pasOpisJsonValue = properties.getString("stevci_pasOpis");
+        if (pasOpisJsonValue != null && !pasOpisJsonValue.toString().equals("null"))
+        {
+          pasOpis = (pasOpis == null ? "" : " ") + properties.getString("stevci_pasOpis");
         }
         int speed = 0;
         int carsPerHour = 0;
@@ -148,16 +153,41 @@ public abstract class SaveCounterToDbRunnable implements Runnable
         Long counterId = counterMap.get(identity);
         if (counterId == null)
         {
-          counterId = insertNewCounter(identity, xCoordinates, yCoordinates);
+          counterId = insertNewCounterDbFriendly(xCoordinates, yCoordinates, identity, pasOpis);
           counterMap.put(identity, counterId);
         }
-        saveToDb(counterId, modifiedTime, speed, carsPerHour, avgSecGap);
+        addBatch(counterId, modifiedTime, speed, carsPerHour, avgSecGap);
       }
     }
-    executeBatch();
   }
 
-  abstract Long insertNewCounter(String identity, double xCoordinates, double yCoordinates) throws SQLException;
+  private void executeBatchDbFriendly() throws SQLException
+  {
+    initConnection();
+    try
+    {
+      executeBatch();
+    }
+    finally
+    {
+      closeConnections();
+    }
+  }
+
+  private Long insertNewCounterDbFriendly(double xCoordinates, double yCoordinates, String identity, String pasOpis) throws SQLException
+  {
+    initConnection();
+    try
+    {
+      return insertNewCounter(identity, xCoordinates, yCoordinates, pasOpis);
+    }
+    finally
+    {
+      closeConnections();
+    }
+  }
+
+  abstract Long insertNewCounter(String identity, double xCoordinates, double yCoordinates, String pasOpis) throws SQLException;
 
   private String readResponse(InputStream ins, HttpURLConnection connection) throws IOException
   {

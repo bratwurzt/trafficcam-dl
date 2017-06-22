@@ -44,14 +44,15 @@ public class SaveCounterToTimescaleRunnable extends SaveCounterToDbRunnable
   }
 
   @Override
-  Long insertNewCounter(String identity, double xCoordinates, double yCoordinates) throws SQLException
+  Long insertNewCounter(String identity, double xCoordinates, double yCoordinates, String pasOpis) throws SQLException
   {
     final PreparedStatement st = connection.prepareStatement(
-        "INSERT INTO counter(id, code, location) VALUES (nextval('counter_seq'), ?, ST_SetSRID(ST_MakePoint(?, ?), 4326)) RETURNING id;"
+        "INSERT INTO counter(id, code, location, description) VALUES (nextval('counter_seq'), ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?) RETURNING id;"
     );
     st.setString(1, identity);
     st.setDouble(2, xCoordinates);
     st.setDouble(3, yCoordinates);
+    st.setString(4, pasOpis);
     st.execute();
     final ResultSet resultSet = st.getResultSet();
     resultSet.next();
@@ -59,7 +60,7 @@ public class SaveCounterToTimescaleRunnable extends SaveCounterToDbRunnable
   }
 
   @Override
-  protected void saveToDb(Long counterId, DateTime timestamp, int speed, int carsPerHour, float avgSecGap) throws SQLException
+  protected void addBatch(Long counterId, DateTime timestamp, int speed, int carsPerHour, float avgSecGap) throws SQLException
   {
     int i = 1;
     statement.setLong(i++, counterId);
