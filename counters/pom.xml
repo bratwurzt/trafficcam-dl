@@ -12,6 +12,7 @@
     <artifactId>counters</artifactId>
     <groupId>si.bleedy</groupId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
@@ -66,7 +67,17 @@
                 <version>2.12</version>
             </extension>
         </extensions>
+
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>2.8.2</version>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -108,13 +119,13 @@
                     </filters>
                     <artifactSet>
                         <excludes>
-                        <exclude>javax:json-api:1.0</exclude>
-                        <!--<exclude>org.apache.spark:*</exclude>-->
-                        <!--<exclude>org.jfree:*</exclude>-->
-                        <!--<exclude>net.sourceforge.javacsv:*</exclude>-->
-                        <!--<exclude>javax.json:*</exclude>-->
-                        <!--<exclude>org.glassfish:*</exclude>-->
-                        <!--<exclude>com.google.protobuf:*</exclude>-->
+                            <exclude>javax:json-api:1.0</exclude>
+                            <!--<exclude>org.apache.spark:*</exclude>-->
+                            <!--<exclude>org.jfree:*</exclude>-->
+                            <!--<exclude>net.sourceforge.javacsv:*</exclude>-->
+                            <!--<exclude>javax.json:*</exclude>-->
+                            <!--<exclude>org.glassfish:*</exclude>-->
+                            <!--<exclude>com.google.protobuf:*</exclude>-->
                         </excludes>
                     </artifactSet>
                     <finalName>uber-${project.artifactId}-${project.version}</finalName>
@@ -125,27 +136,34 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>wagon-maven-plugin</artifactId>
                 <version>1.0</version>
+
                 <executions>
                     <execution>
                         <id>upload-shade-jar</id>
                         <phase>deploy</phase>
                         <goals>
-                            <goal>upload</goal>
+                            <goal>upload-single</goal>
+                            <goal>sshexec</goal>
                         </goals>
                         <configuration>
-                            <fromDir>local.dir</fromDir>
-                            <includes>uber-${project.artifactId}-${project.version}</includes>
-                            <excludes>pom.xml</excludes>
-                            <url>scp://pi:mininova3@192.168.1.7/</url>
-                            <toDir>/home/pi/</toDir>
+                            <fromFile>${project.build.directory}/uber-${project.build.finalName}.jar</fromFile>
+                            <url>scp://pi:mininova3@192.168.1.7/home/pi/</url>
+                            <commands>
+                                <command>./stop-counters.sh; ./start-counters.sh</command>
+                            </commands>
+                            <failOnError>false</failOnError>
                         </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <fromFile>uber-${project.artifactId}-${project.version}</fromFile>
-                </configuration>
             </plugin>
         </plugins>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>my-ssh-repo</id>
+            <url>scp://192.168.1.7/home/pi/</url>
+        </repository>
+    </distributionManagement>
 
 </project>

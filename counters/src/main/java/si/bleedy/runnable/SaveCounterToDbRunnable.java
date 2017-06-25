@@ -33,11 +33,6 @@ public abstract class SaveCounterToDbRunnable implements Runnable
 
   protected abstract void executeBatch() throws SQLException;
 
-  private void runDbAction()
-  {
-
-  }
-
   @Override
   public void run()
   {
@@ -152,7 +147,7 @@ public abstract class SaveCounterToDbRunnable implements Runnable
         Long counterId = counterMap.get(identity);
         if (counterId == null)
         {
-          counterId = insertNewCounterDbFriendly(xCoordinates, yCoordinates, identity, pasOpis);
+          counterId = insertNewCounter(identity, xCoordinates, yCoordinates, pasOpis);
           counterMap.put(identity, counterId);
         }
         addBatch(counterId, modifiedTime, speed, carsPerHour, avgSecGap);
@@ -172,11 +167,6 @@ public abstract class SaveCounterToDbRunnable implements Runnable
     {
       closeConnections();
     }
-  }
-
-  private Long insertNewCounterDbFriendly(double xCoordinates, double yCoordinates, String identity, String pasOpis) throws SQLException
-  {
-    return insertNewCounter(identity, xCoordinates, yCoordinates, pasOpis);
   }
 
   abstract Long insertNewCounter(String identity, double xCoordinates, double yCoordinates, String pasOpis) throws SQLException;
