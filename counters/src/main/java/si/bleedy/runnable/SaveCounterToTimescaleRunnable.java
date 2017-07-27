@@ -1,52 +1,31 @@
 package si.bleedy.runnable;
 
 import org.joda.time.DateTime;
+import si.bleedy.CounterData;
 
-import java.io.IOException;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
 import java.sql.*;
 
 /**
  * @author bratwurzt
  */
-public class SaveCounterToTimescaleRunnable extends SaveCounterToDbRunnable
+public class SaveCounterToTimescaleRunnable extends SaveToDbRunnable
 {
-  private final static String POSTGRES_DB_URL = "jdbc:postgresql://192.168.1.7:5432/counterkeyspace";
-  private final static String USERNAME = "bleedah";
-  private final static String PASSWORD = "password";
-
   private Connection connection = null;
   private PreparedStatement statement;
 
-  @Override
-  protected void initDb() throws IOException, ClassNotFoundException, SQLException
+  public SaveCounterToTimescaleRunnable()
   {
-    Class.forName("org.postgresql.Driver");
-    try
-    {
-      connection = DriverManager.getConnection(POSTGRES_DB_URL, USERNAME, PASSWORD);
-      statement = connection.prepareStatement(
-          "SELECT code, id from counter;"
-      );
-
-      try (final ResultSet rs = statement.executeQuery())
-      {
-        while (rs.next())
-        {
-          counterMap.put(rs.getString(1), rs.getLong(2));
-        }
-      }
-    }
-    finally
-    {
-      closeConnections();
-    }
+    super("http://opendata.si/promet/counters/");
   }
 
   protected void initConnection() throws SQLException
   {
-    if (connection == null || connection.isClosed() || statement.isClosed())
+    super.initConnection();
+    if (statement.isClosed())
     {
-      connection = DriverManager.getConnection(POSTGRES_DB_URL, USERNAME, PASSWORD);
       statement = connection.prepareStatement(
           "INSERT INTO counter_timeline(counter_id, time, avg_sec_gap, speed, cars_per_sec) VALUES (?,?,?,?,?);"
       );
@@ -54,26 +33,86 @@ public class SaveCounterToTimescaleRunnable extends SaveCounterToDbRunnable
   }
 
   @Override
-  Long insertNewCounter(String identity, double xCoordinates, double yCoordinates, String pasOpis) throws SQLException
+  protected long trySaving(final JsonObject jsonObject) throws SQLException, InterruptedException
   {
-    try (Connection con = DriverManager.getConnection(POSTGRES_DB_URL, USERNAME, PASSWORD))
+    final JsonObject contents = jsonObject.getJsonArray("Contents").getJsonObject(0);
+    final DateTime expires = new DateTime(contents.getString("Expires"));
+    if (!expires.equals(m_lastUpdate))
     {
-      final PreparedStatement st = con.prepareStatement(
-          "INSERT INTO counter(id, code, location, description) VALUES (nextval('counter_seq'), ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?) RETURNING id;"
-      );
-      st.setString(1, identity);
-      st.setDouble(2, xCoordinates);
-      st.setDouble(3, yCoordinates);
-      st.setString(4, pasOpis);
-      st.execute();
-      final ResultSet resultSet = st.getResultSet();
-      resultSet.next();
-      return resultSet.getLong(1);
+      executeBatchDbFriendly(contents);
+//      LOG.info(++i + ". inserted.");
+      m_lastUpdate = expires;
     }
+    return expires.minus(DateTime.now().getMillis()).getMillis();
   }
 
   @Override
-  protected void addBatch(Long counterId, DateTime timestamp, int speed, int carsPerHour, float avgSecGap) throws SQLException
+  protected void processJson(final JsonObject contents) throws SQLException
+  {
+    final DateTime modifiedTime = new DateTime(contents.getString("ModifiedTime"));
+    for (final JsonValue value : contents.getJsonObject("Data").getJsonArray("Items"))
+    {
+      JsonObject st = (JsonObject) value;
+
+      final JsonNumber y_wgs = st.getJsonNumber("y_wgs");
+      final JsonNumber x_wgs = st.getJsonNumber("x_wgs");
+      final double xCoordinates = x_wgs.doubleValue();
+      final double yCoordinates = y_wgs.doubleValue();
+      for (final JsonValue data : st.getJsonArray("Data"))
+      {
+        JsonObject node = (JsonObject) data;
+        String identity = node.getString("Id");
+        final JsonObject properties = node.getJsonObject("properties");
+        String pasOpisJsonValue = properties.getString("stevci_smerOpis");
+        String pasOpis = null;
+        if (pasOpisJsonValue != null && !pasOpisJsonValue.toString().equals("null"))
+        {
+          pasOpis = properties.getString("stevci_smerOpis");
+        }
+        pasOpisJsonValue = properties.getString("stevci_pasOpis");
+        if (pasOpisJsonValue != null && !pasOpisJsonValue.toString().equals("null"))
+        {
+          pasOpis = (pasOpis == null ? "" : " ") + properties.getString("stevci_pasOpis");
+        }
+        int speed = 0;
+        int carsPerHour = 0;
+        try
+        {
+          speed = Integer.parseInt(properties.getString("stevci_hit"));
+        }
+        catch (NumberFormatException ignored)
+        {
+        }
+        try
+        {
+          carsPerHour = Integer.parseInt(properties.getString("stevci_stev"));
+        }
+        catch (NumberFormatException ignored)
+        {
+        }
+        float avgSecGap = 999;
+        try
+        {
+          avgSecGap = Float.valueOf(properties.getString("stevci_gap").replace(",", "."));
+        }
+        catch (NumberFormatException ignored)
+        {
+        }
+        CounterData counter = COUNTER_MAP.get(identity);
+        if (counter == null)
+        {
+          counter = insertNewCounter(identity, xCoordinates, yCoordinates, pasOpis);
+          if (counter != null)
+          {
+            COUNTER_MAP.put(identity, counter);
+          }
+        }
+        addBatch(counter.getId(), modifiedTime, speed, carsPerHour, avgSecGap);
+      }
+    }
+  }
+
+  private void addBatch(Long counterId, DateTime timestamp, int speed, int carsPerHour, float avgSecGap) throws SQLException
   {
     int i = 1;
     statement.setLong(i++, counterId);
@@ -94,5 +133,46 @@ public class SaveCounterToTimescaleRunnable extends SaveCounterToDbRunnable
   protected void closeConnections() throws SQLException
   {
     connection.close();
+  }
+
+  private CounterData insertNewCounter(String identity, double xCoordinates, double yCoordinates, String pasOpis) throws SQLException
+  {
+    try (Connection con = DriverManager.getConnection(POSTGRES_DB_URL, USERNAME, PASSWORD))
+    {
+      PreparedStatement st = con.prepareStatement(
+          "INSERT INTO counter(id, code, location, description) VALUES (nextval('counter_seq'), ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?) RETURNING id;"
+      );
+      try
+      {
+        st.setString(1, identity);
+        st.setDouble(2, xCoordinates);
+        st.setDouble(3, yCoordinates);
+        st.setString(4, pasOpis);
+        st.execute();
+        long counterId = 0;
+        try(final ResultSet resultSet = st.getResultSet())
+        {
+          resultSet.next();
+          counterId = resultSet.getLong(1);
+        }
+        st = con.prepareStatement(
+            "SELECT id, code, ST_X(location), ST_Y(location) from counter where id = ?;"
+        );
+        st.setLong(1, counterId);
+        st.execute();
+        try (final ResultSet rs = st.executeQuery())
+        {
+          if (rs.next())
+          {
+            return new CounterData(rs.getLong(1), rs.getString(2), rs.getFloat(3), rs.getFloat(4));
+          }
+        }
+      }
+      finally
+      {
+        st.close();
+      }
+      return null;
+    }
   }
 }

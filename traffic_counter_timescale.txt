@@ -44,9 +44,16 @@ CREATE INDEX counter_code_eq ON counter USING hash (code);
 
 
 CREATE TABLE counter AS SELECT DISTINCT ON (ct.counter_id, ct.geom) nextval('counter_seq') as 'id', ct.counter_id as 'code', ct.geom as 'location' FROM counter_timeline ct;
-
-
 GRANT ALL PRIVILEGES ON TABLE counter to bleedah;
+
+
+CREATE TABLE weather_timeline (
+  time        TIMESTAMPTZ NOT NULL,
+  counter_id  INTEGER REFERENCES counter (id),
+  rain_level INTEGER NOT NULL,
+  rain_mmph FLOAT NOT NULL
+);
+SELECT create_hypertable('weather_timeline', 'time');
 
 
 INSERT INTO observations(name, unit, timestamp, value)
