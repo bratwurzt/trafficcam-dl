@@ -76,6 +76,7 @@ public abstract class SaveToDbRunnable implements Runnable
     }
     finally
     {
+      statement.close();
       closeConnections();
     }
   }
@@ -103,36 +104,41 @@ public abstract class SaveToDbRunnable implements Runnable
     try
     {
       initDb();
+      int i = 1;
       long millisToSleep = 1000;
       while (true)
       {
         for (final URL url : urls)
         {
-          final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-          connection.addRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-          connection.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36");
-          connection.addRequestProperty("Host", url.getHost());
-          connection.addRequestProperty("Referer", url.toString());
-          connection.addRequestProperty("Accept-Encoding", "gzip, deflate, sdch");
-          connection.addRequestProperty("Accept-Language", "en-US,en;q=0.8,sl;q=0.6,de;q=0.4");
-          connection.addRequestProperty("Upgrade-Insecure-Requests", "1");
-          connection.connect();
-          try (final InputStream is = connection.getInputStream())
+          try
           {
-            final String response = readResponse(is, connection);
-            try (final JsonReader reader = Json.createReader(new StringReader(response)))
+            final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.addRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+            connection.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36");
+            connection.addRequestProperty("Host", url.getHost());
+            connection.addRequestProperty("Referer", url.toString());
+            connection.addRequestProperty("Accept-Encoding", "gzip, deflate, sdch");
+            connection.addRequestProperty("Accept-Language", "en-US,en;q=0.8,sl;q=0.6,de;q=0.4");
+            connection.addRequestProperty("Upgrade-Insecure-Requests", "1");
+            connection.connect();
+            try (final InputStream is = connection.getInputStream())
             {
-              millisToSleep = trySaving(reader.readObject());
-            }
-            catch (final Exception e)
-            {
-              LOG.error("Error: ", e);
-              try
+              final String response = readResponse(is, connection);
+              try (final JsonReader reader = Json.createReader(new StringReader(response)))
               {
-                Thread.sleep(20000);
+                millisToSleep = trySaving(reader.readObject());
+                LOG.info(i++ + ". inserted.");
               }
-              catch (InterruptedException ignored)
+              catch (final Exception e)
               {
+                LOG.error("Error: ", e);
+                try
+                {
+                  Thread.sleep(20000);
+                }
+                catch (InterruptedException ignored)
+                {
+                }
               }
             }
           }

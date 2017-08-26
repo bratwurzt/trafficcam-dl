@@ -13,9 +13,6 @@ import java.sql.*;
  */
 public class SaveCounterToTimescaleRunnable extends SaveToDbRunnable
 {
-  private Connection connection = null;
-  private PreparedStatement statement;
-
   public SaveCounterToTimescaleRunnable()
   {
     super("http://opendata.si/promet/counters/");
@@ -40,7 +37,6 @@ public class SaveCounterToTimescaleRunnable extends SaveToDbRunnable
     if (!expires.equals(m_lastUpdate))
     {
       executeBatchDbFriendly(contents);
-//      LOG.info(++i + ". inserted.");
       m_lastUpdate = expires;
     }
     return expires.minus(DateTime.now().getMillis()).getMillis();

@@ -167,17 +167,17 @@ public class TestIOTStreaming extends ApplicationFrame implements Serializable
 //        .writerBuilder("obskeyspace", "observations", CassandraJavaUtil.mapToRow(ObservationData.class))
 //        .saveToCassandra();
 
-    zephyrStream.foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
-          if (rdd.count() > 0)
-          {
-            final List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
-                .groupBy(ObservationData::getGrouping)
-                .collect();
-
-            m_threadPool.execute(new PlotGraphAsync(collect));
-          }
-          return null;
-        });
+//    zephyrStream.foreachRDD((Function<JavaRDD<ObservationData>, Void>)rdd -> {
+//          if (rdd.count() > 0)
+//          {
+//            final List<Tuple2<String, Iterable<ObservationData>>> collect = rdd
+//                .groupBy(ObservationData::getGrouping)
+//                .collect();
+//
+//            m_threadPool.execute(new PlotGraphAsync(collect));
+//          }
+//          return null;
+//        });
 
 //        JavaDStream<ObservationData> cassStream = ssc.receiverStream(
 //            new CassandraTCPReceiver(StorageLevel.MEMORY_ONLY(), 8111)

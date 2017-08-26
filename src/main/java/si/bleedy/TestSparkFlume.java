@@ -39,7 +39,7 @@ public class TestSparkFlume
             + "body: " + new String(e.event().getBody().array()))
         .print();
     ssc.start();
-    ssc.awaitTermination();
+//    ssc.awaitTermination();
 
   }
 }
