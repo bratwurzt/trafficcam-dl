@@ -98,25 +98,8 @@
                     <filters>
                         <filter>
                             <artifact>*:*</artifact>
-                            <!--<excludes>-->
-                            <!--<exclude>org.apache.cassandra:cassandra-all</exclude>-->
-                            <!--<exclude>META-INF/*.SF</exclude>-->
-                            <!--<exclude>META-INF/*.DSA</exclude>-->
-                            <!--<exclude>META-INF/*.RSA</exclude>-->
-                            <!--</excludes>-->
                         </filter>
                     </filters>
-                    <artifactSet>
-                        <excludes>
-                            <exclude>javax:json-api:1.0</exclude>
-                            <!--<exclude>org.apache.spark:*</exclude>-->
-                            <!--<exclude>org.jfree:*</exclude>-->
-                            <!--<exclude>net.sourceforge.javacsv:*</exclude>-->
-                            <!--<exclude>javax.json:*</exclude>-->
-                            <!--<exclude>org.glassfish:*</exclude>-->
-                            <!--<exclude>com.google.protobuf:*</exclude>-->
-                        </excludes>
-                    </artifactSet>
                     <finalName>uber-${project.artifactId}-${project.version}</finalName>
                 </configuration>
             </plugin>
