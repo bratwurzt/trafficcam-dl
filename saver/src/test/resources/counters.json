@@ -1,0 +1,1006 @@
+{
+  "RoutingVersion": 1,
+  "updated": 1508691723,
+  "TileVersion": 0,
+  "ModifiedTime": "2017-10-22T17:01:51.7694906Z",
+  "copyright": "Prometno-informacijski center za dr\u017eavne ceste",
+  "ModelVersion": 1,
+  "Expires": "2017-10-22T17:02:14.2172009Z",
+  "Contents": [
+    {
+      "Language": "sl_SI",
+      "ModifiedTime": "2017-10-22T17:01:51.7694906Z",
+      "IsModified": true,
+      "ContentName": "stevci",
+      "Expires": "2017-10-22T17:02:51.7538645Z",
+      "ETag": "PaE7YAVPIvvWsEIpo/4cSK2x7G5SdRb9DGCPEz1ThnUSrB1i3kaTI379qKLhrJbx9R+91WOEKKK+5/uoLXTNTA==",
+      "Data": {
+        "ContentName": "stevci",
+        "Language": "sl_SI",
+        "Items": [
+          {
+            "y_wgs": 46.01962915242322,
+            "Description": "AC-A1, LJ (ju\u017ena obvoznica)",
+            "Title": "AC-A1, LJ (ju\u017ena obvoznica)",
+            "ContentName": "stevci",
+            "x_wgs": 14.51818035950113,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "AC-A1",
+            "Y": 97385.0,
+            "X": 463074.0,
+            "Icon": "res/icons/stevci/stevec_2.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "4,5",
+                  "stevci_statOpis": "Pove\u010dan promet",
+                  "stevci_hit": "98",
+                  "stevci_stev": "720",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "Barjanska - Peruzzijeva",
+                  "stevci_stat": "2"
+                },
+                "Id": "0178-21",
+                "Icon": "2"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "7,3",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "119",
+                  "stevci_stev": "492",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "Barjanska - Peruzzijeva",
+                  "stevci_stat": "1"
+                },
+                "Id": "0178-22",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "4,1",
+                  "stevci_statOpis": "Pove\u010dan promet",
+                  "stevci_hit": "91",
+                  "stevci_stev": "576",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "Peruzzijeva - Barjanska",
+                  "stevci_stat": "2"
+                },
+                "Id": "0178-11",
+                "Icon": "2"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "4,5",
+                  "stevci_statOpis": "Pove\u010dan promet",
+                  "stevci_hit": "114",
+                  "stevci_stev": "744",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "Peruzzijeva - Barjanska",
+                  "stevci_stat": "2"
+                },
+                "Id": "0178-12",
+                "Icon": "2"
+              }
+            ],
+            "Id": "0178",
+            "stevci_lokacijaOpis": "LJ (ju\u017ena obvoznica)"
+          },
+          {
+            "y_wgs": 46.03063029723843,
+            "Description": "AC-A1, LJ (vzh. obvoznica)",
+            "Title": "AC-A1, LJ (vzh. obvoznica)",
+            "ContentName": "stevci",
+            "x_wgs": 14.569432909922808,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "AC-A1",
+            "Y": 98585.0,
+            "X": 467049.0,
+            "Icon": "res/icons/stevci/stevec_3.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "3,3",
+                  "stevci_statOpis": "Zgo\u0161\u010den promet",
+                  "stevci_hit": "83",
+                  "stevci_stev": "984",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "Litijska - Malence",
+                  "stevci_stat": "3"
+                },
+                "Id": "0180-11",
+                "Icon": "3"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "6,0",
+                  "stevci_statOpis": "Pove\u010dan promet",
+                  "stevci_hit": "98",
+                  "stevci_stev": "588",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "Litijska - Malence",
+                  "stevci_stat": "2"
+                },
+                "Id": "0180-12",
+                "Icon": "2"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "3,3",
+                  "stevci_statOpis": "Zgo\u0161\u010den promet",
+                  "stevci_hit": "90",
+                  "stevci_stev": "984",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "Malence - Litijska",
+                  "stevci_stat": "3"
+                },
+                "Id": "0180-21",
+                "Icon": "3"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "9,3",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "108",
+                  "stevci_stev": "372",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "Malence - Litijska",
+                  "stevci_stat": "1"
+                },
+                "Id": "0180-22",
+                "Icon": "1"
+              }
+            ],
+            "Id": "0180",
+            "stevci_lokacijaOpis": "LJ (vzh. obvoznica)"
+          },
+          {
+            "y_wgs": 46.25499852281521,
+            "Description": "AC-A1, Lopata AC",
+            "Title": "AC-A1, Lopata AC",
+            "ContentName": "stevci",
+            "x_wgs": 15.249649416039896,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "AC-A1",
+            "Y": 123463.0,
+            "X": 519628.0,
+            "Icon": "res/icons/stevci/stevec_2.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "4,6",
+                  "stevci_statOpis": "Pove\u010dan promet",
+                  "stevci_hit": "95",
+                  "stevci_stev": "696",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "Celje - Celje zahod",
+                  "stevci_stat": "2"
+                },
+                "Id": "0648-11",
+                "Icon": "2"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "6,5",
+                  "stevci_statOpis": "Pove\u010dan promet",
+                  "stevci_hit": "115",
+                  "stevci_stev": "504",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "Celje - Celje zahod",
+                  "stevci_stat": "2"
+                },
+                "Id": "0648-12",
+                "Icon": "2"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "7,2",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "102",
+                  "stevci_stev": "492",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "Celje zahod - Celje",
+                  "stevci_stat": "1"
+                },
+                "Id": "0648-21",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "12,1",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "119",
+                  "stevci_stev": "288",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "Celje zahod - Celje",
+                  "stevci_stat": "1"
+                },
+                "Id": "0648-22",
+                "Icon": "1"
+              }
+            ],
+            "Id": "0648",
+            "stevci_lokacijaOpis": "Lopata AC"
+          },
+          {
+            "y_wgs": 46.68260949607373,
+            "Description": "AC-A1, MT \u0160entilj AC",
+            "Title": "AC-A1, MT \u0160entilj AC",
+            "ContentName": "stevci",
+            "x_wgs": 15.651096864062305,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "AC-A1",
+            "Y": 171168.0,
+            "X": 550187.0,
+            "Icon": "res/icons/stevci/stevec_1.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "27,1",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "81",
+                  "stevci_stev": "132",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "MT \u0160entilj - \u0160entilj",
+                  "stevci_stat": "1"
+                },
+                "Id": "0674-11",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "66,4",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "111",
+                  "stevci_stev": "12",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "MT \u0160entilj - \u0160entilj",
+                  "stevci_stat": "1"
+                },
+                "Id": "0674-12",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "7,6",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "77",
+                  "stevci_stev": "444",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "\u0160entilj - MT \u0160entilj",
+                  "stevci_stat": "1"
+                },
+                "Id": "0674-21",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "15,9",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "91",
+                  "stevci_stev": "228",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "\u0160entilj - MT \u0160entilj",
+                  "stevci_stat": "1"
+                },
+                "Id": "0674-22",
+                "Icon": "1"
+              }
+            ],
+            "Id": "0674",
+            "stevci_lokacijaOpis": "MT \u0160entilj AC"
+          },
+          {
+            "y_wgs": 46.46679247897154,
+            "Description": "AC-A1, Ho\u010de AC",
+            "Title": "AC-A1, Ho\u010de AC",
+            "ContentName": "stevci",
+            "x_wgs": 15.658019247693003,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "AC-A1",
+            "Y": 147184.0,
+            "X": 550917.0,
+            "Icon": "res/icons/stevci/stevec_2.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "5,4",
+                  "stevci_statOpis": "Pove\u010dan promet",
+                  "stevci_hit": "97",
+                  "stevci_stev": "660",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "Fram - Slivnica",
+                  "stevci_stat": "2"
+                },
+                "Id": "0802-21",
+                "Icon": "2"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "11,1",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "118",
+                  "stevci_stev": "324",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "Fram - Slivnica",
+                  "stevci_stat": "1"
+                },
+                "Id": "0802-22",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "5,1",
+                  "stevci_statOpis": "Pove\u010dan promet",
+                  "stevci_hit": "104",
+                  "stevci_stev": "672",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "Slivnica - Fram",
+                  "stevci_stat": "2"
+                },
+                "Id": "0802-11",
+                "Icon": "2"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "11,2",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "122",
+                  "stevci_stev": "312",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "Slivnica - Fram",
+                  "stevci_stat": "1"
+                },
+                "Id": "0802-12",
+                "Icon": "1"
+              }
+            ],
+            "Id": "0802",
+            "stevci_lokacijaOpis": "Ho\u010de AC"
+          },
+          {
+            "y_wgs": 45.55195752942011,
+            "Description": "AC-A1, Dekani AC",
+            "Title": "AC-A1, Dekani AC",
+            "ContentName": "stevci",
+            "x_wgs": 13.832518763533436,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "AC-A1",
+            "Y": 45959.0,
+            "X": 409226.0,
+            "Icon": "res/icons/stevci/stevec_1.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "11,2",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "89",
+                  "stevci_stev": "324",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "\u010crni Kal - Srmin",
+                  "stevci_stat": "1"
+                },
+                "Id": "0803-11",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "68,7",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "97",
+                  "stevci_stev": "60",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "\u010crni Kal - Srmin",
+                  "stevci_stat": "1"
+                },
+                "Id": "0803-12",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "7,3",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "83",
+                  "stevci_stev": "468",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "Srmin - \u010crni Kal",
+                  "stevci_stat": "1"
+                },
+                "Id": "0803-21",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "22,2",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "102",
+                  "stevci_stev": "132",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "Srmin - \u010crni Kal",
+                  "stevci_stat": "1"
+                },
+                "Id": "0803-22",
+                "Icon": "1"
+              }
+            ],
+            "Id": "0803",
+            "stevci_lokacijaOpis": "Dekani AC"
+          },
+          {
+            "y_wgs": 45.66868547276718,
+            "Description": "AC-A1, Priklju\u010dek Diva\u010da",
+            "Title": "AC-A1, Priklju\u010dek Diva\u010da",
+            "ContentName": "stevci",
+            "x_wgs": 13.966485972523834,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "AC-A1",
+            "Y": 58788.0,
+            "X": 419853.0,
+            "Icon": "res/icons/stevci/stevec_1.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "140,3",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "62",
+                  "stevci_stev": "12",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Izstop iz AC - KP",
+                  "stevci_stat": "1"
+                },
+                "Id": "0808-12",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "33,8",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "45",
+                  "stevci_stev": "12",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Izstop iz AC - LJ",
+                  "stevci_stat": "1"
+                },
+                "Id": "0808-11",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "114,5",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "76",
+                  "stevci_stev": "48",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Vstop na AC - KP",
+                  "stevci_stat": "1"
+                },
+                "Id": "0808-21",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "116,8",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "51",
+                  "stevci_stev": "12",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Vstop na AC - LJ",
+                  "stevci_stat": "1"
+                },
+                "Id": "0808-22",
+                "Icon": "1"
+              }
+            ],
+            "Id": "0808",
+            "stevci_lokacijaOpis": "Priklju\u010dek Diva\u010da"
+          },
+          {
+            "y_wgs": 45.700578496181585,
+            "Description": "AC-A1, \u010cebulovica AC",
+            "Title": "AC-A1, \u010cebulovica AC",
+            "ContentName": "stevci",
+            "x_wgs": 13.98903953988587,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "AC-A1",
+            "Y": 62310.0,
+            "X": 421655.0,
+            "Icon": "res/icons/stevci/stevec_2.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "8,0",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "83",
+                  "stevci_stev": "420",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "Diva\u010da - Seno\u017ee\u010de",
+                  "stevci_stat": "1"
+                },
+                "Id": "0812-21",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "54,2",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "95",
+                  "stevci_stev": "60",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "Diva\u010da - Seno\u017ee\u010de",
+                  "stevci_stat": "1"
+                },
+                "Id": "0812-22",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "6,5",
+                  "stevci_statOpis": "Pove\u010dan promet",
+                  "stevci_hit": "99",
+                  "stevci_stev": "540",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "Seno\u017ee\u010de - Diva\u010da",
+                  "stevci_stat": "2"
+                },
+                "Id": "0812-11",
+                "Icon": "2"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "35,5",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "122",
+                  "stevci_stev": "108",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "Seno\u017ee\u010de - Diva\u010da",
+                  "stevci_stat": "1"
+                },
+                "Id": "0812-12",
+                "Icon": "1"
+              }
+            ],
+            "Id": "0812",
+            "stevci_lokacijaOpis": "\u010cebulovica AC"
+          },
+          {
+            "y_wgs": 45.612061547704634,
+            "Description": "AC-A1, Priklju\u010dek Kozina",
+            "Title": "AC-A1, Priklju\u010dek Kozina",
+            "ContentName": "stevci",
+            "x_wgs": 13.935292715189803,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "AC-A1",
+            "Y": 52527.0,
+            "X": 417339.0,
+            "Icon": "res/icons/stevci/stevec_1.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "47,8",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "48",
+                  "stevci_stev": "72",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Izstop iz AC - KP",
+                  "stevci_stat": "1"
+                },
+                "Id": "0821-12",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "45,5",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "53",
+                  "stevci_stev": "72",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Izstop iz AC - LJ",
+                  "stevci_stat": "1"
+                },
+                "Id": "0821-22",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "63,0",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "34",
+                  "stevci_stev": "72",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Vstop na AC - LJ",
+                  "stevci_stat": "1"
+                },
+                "Id": "0821-21",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "37,5",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "41",
+                  "stevci_stev": "84",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Vstop na AC-KP",
+                  "stevci_stat": "1"
+                },
+                "Id": "0821-11",
+                "Icon": "1"
+              }
+            ],
+            "Id": "0821",
+            "stevci_lokacijaOpis": "Priklju\u010dek Kozina"
+          },
+          {
+            "y_wgs": 45.796701090592336,
+            "Description": "AC-A1, Ravbarkomanda AC",
+            "Title": "AC-A1, Ravbarkomanda AC",
+            "ContentName": "stevci",
+            "x_wgs": 14.241000111699028,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "AC-A1",
+            "Y": 72776.0,
+            "X": 441377.0,
+            "Icon": "res/icons/stevci/stevec_0.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "0,0",
+                  "stevci_statOpis": "Ni podatka",
+                  "stevci_hit": "0",
+                  "stevci_stev": "0",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "Postojna - Unec",
+                  "stevci_stat": "0"
+                },
+                "Id": "0822-21",
+                "Icon": "0"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "0,0",
+                  "stevci_statOpis": "Ni podatka",
+                  "stevci_hit": "0",
+                  "stevci_stev": "0",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "Postojna - Unec",
+                  "stevci_stat": "0"
+                },
+                "Id": "0822-22",
+                "Icon": "0"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "0,0",
+                  "stevci_statOpis": "Ni podatka",
+                  "stevci_hit": "0",
+                  "stevci_stev": "0",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "Unec - Postojna",
+                  "stevci_stat": "0"
+                },
+                "Id": "0822-11",
+                "Icon": "0"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "0,0",
+                  "stevci_statOpis": "Ni podatka",
+                  "stevci_hit": "0",
+                  "stevci_stev": "0",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "Unec - Postojna",
+                  "stevci_stat": "0"
+                },
+                "Id": "0822-12",
+                "Icon": "0"
+              }
+            ],
+            "Id": "0822",
+            "stevci_lokacijaOpis": "Ravbarkomanda AC"
+          },
+          {
+            "y_wgs": 45.82348476174191,
+            "Description": "AC-A1, Priklju\u010dek Unec",
+            "Title": "AC-A1, Priklju\u010dek Unec",
+            "ContentName": "stevci",
+            "x_wgs": 14.288113213598326,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "AC-A1",
+            "Y": 75719.0,
+            "X": 445066.0,
+            "Icon": "res/icons/stevci/stevec_1.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "140,9",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "37",
+                  "stevci_stev": "24",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Izstop iz AC - KP",
+                  "stevci_stat": "1"
+                },
+                "Id": "0824-12",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "32,5",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "39",
+                  "stevci_stev": "120",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Izstop iz AC - LJ",
+                  "stevci_stat": "1"
+                },
+                "Id": "0824-22",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "197,7",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "31",
+                  "stevci_stev": "12",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Vstop na AC - KP",
+                  "stevci_stat": "1"
+                },
+                "Id": "0824-21",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "47,6",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "48",
+                  "stevci_stev": "84",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Vstop na AC - LJ",
+                  "stevci_stat": "1"
+                },
+                "Id": "0824-11",
+                "Icon": "1"
+              }
+            ],
+            "Id": "0824",
+            "stevci_lokacijaOpis": "Priklju\u010dek Unec"
+          },
+          {
+            "y_wgs": 45.75911192118615,
+            "Description": "AC-A1, Priklju\u010dek Postojna",
+            "Title": "AC-A1, Priklju\u010dek Postojna",
+            "ContentName": "stevci",
+            "x_wgs": 14.19682545325922,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "AC-A1",
+            "Y": 68632.0,
+            "X": 437901.0,
+            "Icon": "res/icons/stevci/stevec_1.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "40,7",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "36",
+                  "stevci_stev": "84",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Izstop iz AC - KP",
+                  "stevci_stat": "1"
+                },
+                "Id": "0826-22",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "25,4",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "64",
+                  "stevci_stev": "132",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Izstop iz AC - LJ 1",
+                  "stevci_stat": "1"
+                },
+                "Id": "0826-11",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "999,9",
+                  "stevci_statOpis": "Ni prometa",
+                  "stevci_hit": "0",
+                  "stevci_stev": "0",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Izstop iz AC - LJ 2",
+                  "stevci_stat": "6"
+                },
+                "Id": "0826-12",
+                "Icon": "6"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "57,0",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "26",
+                  "stevci_stev": "84",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Vstop na AC - KP",
+                  "stevci_stat": "1"
+                },
+                "Id": "0826-13",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "29,0",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "53",
+                  "stevci_stev": "144",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Vstop na AC - LJ",
+                  "stevci_stat": "1"
+                },
+                "Id": "0826-21",
+                "Icon": "1"
+              }
+            ],
+            "Id": "0826",
+            "stevci_lokacijaOpis": "Priklju\u010dek Postojna"
+          },
+          {
+            "y_wgs": 45.75859415822797,
+            "Description": "AC-A1, Priklj. Razdrto",
+            "Title": "AC-A1, Priklj. Razdrto",
+            "ContentName": "stevci",
+            "x_wgs": 14.07358087402791,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "AC-A1",
+            "Y": 68678.0,
+            "X": 428313.0,
+            "Icon": "res/icons/stevci/stevec_1.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "107,6",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "20",
+                  "stevci_stev": "12",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Izstop iz AC - KP",
+                  "stevci_stat": "1"
+                },
+                "Id": "0828-11",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "62,7",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "12",
+                  "stevci_stev": "24",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Izstop iz AC - LJ",
+                  "stevci_stat": "1"
+                },
+                "Id": "0828-21",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "409,6",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "34",
+                  "stevci_stev": "12",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Vstop na AC - KP",
+                  "stevci_stat": "1"
+                },
+                "Id": "0828-22",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "146,8",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "22",
+                  "stevci_stev": "36",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Vstop na AC - LJ",
+                  "stevci_stat": "1"
+                },
+                "Id": "0828-12",
+                "Icon": "1"
+              }
+            ],
+            "Id": "0828",
+            "stevci_lokacijaOpis": "Priklj. Razdrto"
+          },
+          {
+            "y_wgs": 46.10535750317388,
+            "Description": "AC-A1, P\u0161ata AC",
+            "Title": "AC-A1, P\u0161ata AC",
+            "ContentName": "stevci",
+            "x_wgs": 14.597478544831743,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "AC-A1",
+            "Y": 106879.0,
+            "X": 469262.0,
+            "Icon": "res/icons/stevci/stevec_3.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "3,6",
+                  "stevci_statOpis": "Zgo\u0161\u010den promet",
+                  "stevci_hit": "101",
+                  "stevci_stev": "912",
+                  "stevci_pasOpis": "(v)",
+                  "stevci_smerOpis": "Dom\u017eale - \u0160entjakob",
+                  "stevci_stat": "3"
+                },
+                "Id": "0830-11",
+                "Icon": "3"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "5,5",
+                  "stevci_statOpis": "Pove\u010dan promet",
+                  "stevci_hit": "122",
+                  "stevci_stev": "636",
+                  "stevci_pasOpis": "(p)",
+                  "stevci_smerOpis": "Dom\u017eale - \u0160entjakob",
+                  "stevci_stat": "2"
+                },
+                "Id": "0830-12",
+                "Icon": "2"
+              }
+            ],
+            "Id": "0830",
+            "stevci_lokacijaOpis": "P\u0161ata AC"
+          },
+          {
+            "y_wgs": 46.49441489085228,
+            "Description": "RT-929, Spodnje Ho\u010de",
+            "Title": "RT-929, Spodnje Ho\u010de",
+            "ContentName": "stevci",
+            "x_wgs": 15.635425210414377,
+            "CrsId": "EPSG:2170",
+            "stevci_cestaOpis": "RT-929",
+            "Y": 150240.0,
+            "X": 549157.0,
+            "Icon": "res/icons/stevci/stevec_1.png",
+            "Data": [
+              {
+                "properties": {
+                  "stevci_gap": "83,4",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "63",
+                  "stevci_stev": "36",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Sp. Ho\u010de - Zg. Ho\u010de",
+                  "stevci_stat": "1"
+                },
+                "Id": "0912-11",
+                "Icon": "1"
+              },
+              {
+                "properties": {
+                  "stevci_gap": "38,4",
+                  "stevci_statOpis": "Normalen promet",
+                  "stevci_hit": "49",
+                  "stevci_stev": "84",
+                  "stevci_pasOpis": "",
+                  "stevci_smerOpis": "Zg. Ho\u010de - Sp. Ho\u010de",
+                  "stevci_stat": "1"
+                },
+                "Id": "0912-21",
+                "Icon": "1"
+              }
+            ],
+            "Id": "0912",
+            "stevci_lokacijaOpis": "Spodnje Ho\u010de"
+          }
+        ]
+      }
+    }
+  ]
+}

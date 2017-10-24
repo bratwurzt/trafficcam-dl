@@ -86,14 +86,7 @@ public class SaveCounterToTimescaleRunnable extends SaveToDbRunnable
         catch (NumberFormatException ignored)
         {
         }
-        float avgSecGap = 999;
-        try
-        {
-          avgSecGap = Float.valueOf(properties.getString("stevci_gap").replace(",", "."));
-        }
-        catch (NumberFormatException ignored)
-        {
-        }
+        float avgSecGap = getAvgSecGap(properties.getString("stevci_gap"));
         CounterData counter = COUNTER_MAP.get(identity);
         if (counter == null)
         {
@@ -106,6 +99,19 @@ public class SaveCounterToTimescaleRunnable extends SaveToDbRunnable
         addBatch(counter.getId(), modifiedTime, speed, carsPerHour, avgSecGap);
       }
     }
+  }
+
+  private float getAvgSecGap(final String stevciGap)
+  {
+    float avgSecGap = 999;
+    try
+    {
+      avgSecGap = Float.valueOf(stevciGap.replace(",", "."));
+    }
+    catch (NumberFormatException ignored)
+    {
+    }
+    return avgSecGap;
   }
 
   private void addBatch(Long counterId, DateTime timestamp, int speed, int carsPerHour, float avgSecGap) throws SQLException

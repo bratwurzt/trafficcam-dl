@@ -31,6 +31,13 @@ select setup_timescaledb();
 SELECT create_hypertable('counter_timeline', 'time');
 
 
+ALTER TABLE counter_timeline ADD COLUMN id BIGINT;
+CREATE SEQUENCE counter_timeline_seq START 1;
+ALTER SEQUENCE counter_timeline_seq RESTART WITH 1;
+UPDATE counter_timeline SET id = nextval('counter_timeline_seq');
+ALTER TABLE counter_timeline ADD PRIMARY KEY (id);
+
+
 INSERT INTO counter_timeline(counter_id, time, avg_sec_gap, speed, cars_per_sec)
   VALUES (?,?,?,?,?);
 
