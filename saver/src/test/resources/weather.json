@@ -1,0 +1,118 @@
+{
+  "status": "ok",
+  "copyright": "ARSO, Agencija RS za okolje",
+  "lon": "12.92",
+  "forecast": {
+    "y": 139,
+    "x": 32,
+    "updated": 1508925600,
+    "data": [
+      {
+        "forecast_time": "2017-10-25 20:00",
+        "clouds": 60,
+        "rain": 0,
+        "offset": 6
+      },
+      {
+        "forecast_time": "2017-10-25 23:00",
+        "clouds": 0,
+        "rain": 0,
+        "offset": 9
+      },
+      {
+        "forecast_time": "2017-10-26 02:00",
+        "clouds": 60,
+        "rain": 0,
+        "offset": 12
+      },
+      {
+        "forecast_time": "2017-10-26 05:00",
+        "clouds": 40,
+        "rain": 0,
+        "offset": 15
+      },
+      {
+        "forecast_time": "2017-10-26 08:00",
+        "clouds": 0,
+        "rain": 0,
+        "offset": 18
+      },
+      {
+        "forecast_time": "2017-10-26 11:00",
+        "clouds": 0,
+        "rain": 0,
+        "offset": 21
+      },
+      {
+        "forecast_time": "2017-10-26 14:00",
+        "clouds": 60,
+        "rain": 0,
+        "offset": 24
+      },
+      {
+        "forecast_time": "2017-10-26 17:00",
+        "clouds": 60,
+        "rain": 0,
+        "offset": 27
+      },
+      {
+        "forecast_time": "2017-10-26 20:00",
+        "clouds": 60,
+        "rain": 0,
+        "offset": 30
+      },
+      {
+        "forecast_time": "2017-10-26 23:00",
+        "clouds": 60,
+        "rain": 0,
+        "offset": 33
+      },
+      {
+        "forecast_time": "2017-10-27 02:00",
+        "clouds": 40,
+        "rain": 0,
+        "offset": 36
+      },
+      {
+        "forecast_time": "2017-10-27 05:00",
+        "clouds": 80,
+        "rain": 0,
+        "offset": 39
+      },
+      {
+        "forecast_time": "2017-10-27 08:00",
+        "clouds": 80,
+        "rain": 0,
+        "offset": 42
+      },
+      {
+        "forecast_time": "2017-10-27 11:00",
+        "clouds": 40,
+        "rain": 0,
+        "offset": 45
+      },
+      {
+        "forecast_time": "2017-10-27 14:00",
+        "clouds": 0,
+        "rain": 1,
+        "offset": 48
+      }
+    ]
+  },
+  "radar": {
+    "updated": 1508960879,
+    "rain_level": 0,
+    "rain_mmph": 0.0,
+    "updated_text": "2017-10-25 21:47",
+    "y": 98,
+    "x": 155
+  },
+  "lat": "47.05",
+  "hailprob": {
+    "y": 52,
+    "updated_text": "2017-10-25 21:45",
+    "updated": 1508960751,
+    "hail_level": 0,
+    "x": 5
+  }
+}

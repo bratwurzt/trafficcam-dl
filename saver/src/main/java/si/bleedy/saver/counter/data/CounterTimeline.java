@@ -1,4 +1,4 @@
-package si.bleedy.saver.data;
+package si.bleedy.saver.counter.data;
 
 import org.hibernate.annotations.Type;
 import org.joda.time.DateTime;
@@ -11,7 +11,7 @@ import static javax.persistence.GenerationType.SEQUENCE;
  * @author bratwurzt
  */
 @Entity
-@SequenceGenerator(name = "counter_timeline_seq", sequenceName = "counter_timeline_seq", allocationSize = 1200)
+@SequenceGenerator(name = "counter_timeline_id_seq", sequenceName = "counter_timeline_id_seq", allocationSize = 1200)
 @Table(name = "counter_timeline")
 public class CounterTimeline
 {
@@ -32,7 +32,7 @@ public class CounterTimeline
   }
 
   @Id
-  @GeneratedValue(strategy = SEQUENCE, generator = "counter_timeline_seq")
+  @GeneratedValue(strategy = SEQUENCE, generator = "counter_timeline_id_seq")
   public Long getId()
   {
     return id;

@@ -18,7 +18,7 @@ GRANT ALL PRIVILEGES ON DATABASE counterkeyspace to bleedah;
 
 
 CREATE TABLE counter (
-  id          BIGINT PRIMARY KEY,
+  id          SMALLINT PRIMARY KEY,
   code        TEXT NOT NULL,
   description        TEXT NOT NULL
 );
@@ -27,9 +27,9 @@ SELECT AddGeometryColumn('counter','location','4326','POINT',2);
 CREATE SEQUENCE counter_seq START 1;
 
 CREATE TABLE counter_timeline (
-  id          BIGINT NOT NULL,
+  id          SERIAL PRIMARY KEY,
   time        TIMESTAMPTZ NOT NULL,
-  counter_id  BIGINT NOT NULL,
+  counter_id  SMALLINT REFERENCES counter (id),
   avg_sec_gap FLOAT           NULL,
   speed       INTEGER         NULL,
   cars_per_sec INTEGER         NULL
@@ -40,15 +40,21 @@ GRANT ALL PRIVILEGES ON TABLE counter_timeline to bleedah;
 SELECT create_hypertable('counter_timeline', 'time');
 
 
-CREATE SEQUENCE counter_timeline_seq START 1;
+
+
 
 --WEATHER
+
+
+
 CREATE TABLE weather_timeline (
+  id          SERIAL PRIMARY KEY,
   time        TIMESTAMPTZ NOT NULL,
-  counter_id  INTEGER REFERENCES counter (id),
-  rain_level INTEGER NOT NULL,
+  counter_id  SMALLINT REFERENCES counter (id),
+  hailprob_level SMALLINT NOT NULL,
   rain_mmph FLOAT NOT NULL
 );
+GRANT ALL PRIVILEGES ON TABLE weather_timeline to bleedah;
 SELECT create_hypertable('weather_timeline', 'time');
 
 

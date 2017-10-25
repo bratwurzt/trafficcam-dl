@@ -1,9 +1,9 @@
-package si.bleedy.saver.data;
+package si.bleedy.saver.counter.data;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import org.hibernate.annotations.ColumnTransformer;
+import org.hibernate.annotations.Formula;
+
+import javax.persistence.*;
 
 /**
  * @author bratwurzt
@@ -14,8 +14,8 @@ public class CounterData
 {
   private long id;
   private String code;
-  private float lon;
-  private float lat;
+  private Float lon;
+  private Float lat;
 
   public CounterData()
   {
@@ -27,6 +27,10 @@ public class CounterData
     this.code = code;
     this.lon = lon;
     this.lat = lat;
+  }
+
+  @PostLoad
+  private void onLoad() {
   }
 
   @Id
@@ -50,24 +54,24 @@ public class CounterData
     this.code = code;
   }
 
-  @Transient
-  public float getLon()
+  @Formula(value = "ST_X(location)")
+  public Float getLon()
   {
     return lon;
   }
 
-  public void setLon(float lon)
+  public void setLon(Float lon)
   {
     this.lon = lon;
   }
 
-  @Transient
-  public float getLat()
+    @Formula(value = "ST_Y(location)")
+  public Float getLat()
   {
     return lat;
   }
 
-  public void setLat(float lat)
+  public void setLat(Float lat)
   {
     this.lat = lat;
   }

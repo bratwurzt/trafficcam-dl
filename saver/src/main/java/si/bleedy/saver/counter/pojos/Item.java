@@ -1,4 +1,4 @@
-package si.bleedy.saver.pojos;
+package si.bleedy.saver.counter.pojos;
 
 import com.fasterxml.jackson.annotation.*;
 

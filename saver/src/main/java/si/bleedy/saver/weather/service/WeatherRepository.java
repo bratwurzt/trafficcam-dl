@@ -1,16 +1,16 @@
-package si.bleedy.saver.service;
+package si.bleedy.saver.weather.service;
 
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
-import si.bleedy.saver.data.CounterData;
+import si.bleedy.saver.counter.data.CounterData;
 
 import javax.transaction.Transactional;
 
 /**
  * @author bratwurzt
  */
-public interface CounterRepository extends CrudRepository<CounterData, Long>
+public interface WeatherRepository extends CrudRepository<CounterData, Long>
 {
   @Modifying
   @Transactional
