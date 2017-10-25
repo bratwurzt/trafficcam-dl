@@ -31,6 +31,7 @@ public class Saver
   private static final Logger LOG = LoggerFactory.getLogger(Saver.class);
   private final Map<String, CounterData> COUNTER_MAP;
   private volatile DateTime lastModified = null;
+  private Long lastChange;
 
   private final CountersClient countersClient;
   private final CounterRepository counterRepository;
@@ -46,7 +47,7 @@ public class Saver
         .collect(Collectors.toMap(CounterData::getCode, Function.identity()));
   }
 
-  @Scheduled(fixedRate = 5000)
+  @Scheduled(fixedRate = 60000)
   public void saveCounters()
   {
     final Counter counters = countersClient.getCounters();
@@ -54,6 +55,7 @@ public class Saver
     final DateTime modifiedTime = content.getModifiedTime();
     if (!modifiedTime.equals(lastModified))
     {
+      lastChange = System.currentTimeMillis();
       final List<CounterTimeline> counterTimelines = content.getData().getItems().stream()
           .flatMap(it -> it.getData().stream()
               .map(d -> new CounterTimeline(
@@ -66,7 +68,10 @@ public class Saver
           .collect(Collectors.toList());
 
       counterTimelineRepository.save(counterTimelines);
-      LOG.info("Saved " + counterTimelines.size() + " counters.");
+      lastModified = modifiedTime;
+      long millis = System.currentTimeMillis() - lastChange;
+
+      LOG.info("Saved " + counterTimelines.size() + " counters in " + (millis/1000) + " seconds.");
     }
   }
 

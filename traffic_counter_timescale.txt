@@ -13,47 +13,36 @@ ALTER DATABASE counterkeyspace OWNER TO bleedah;
 psql bleedah -h localhost -d counterkeyspace
 
 CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+GRANT ALL PRIVILEGES ON DATABASE counterkeyspace to bleedah;
+
+
+CREATE TABLE counter (
+  id          BIGINT PRIMARY KEY,
+  code        TEXT NOT NULL,
+  description        TEXT NOT NULL
+);
+GRANT ALL PRIVILEGES ON TABLE counter to bleedah;
+SELECT AddGeometryColumn('counter','location','4326','POINT',2);
+CREATE SEQUENCE counter_seq START 1;
 
 CREATE TABLE counter_timeline (
+  id          BIGINT NOT NULL,
   time        TIMESTAMPTZ NOT NULL,
-  counter_id  INTEGER NOT NULL,
+  counter_id  BIGINT NOT NULL,
   avg_sec_gap FLOAT           NULL,
   speed       INTEGER         NULL,
   cars_per_sec INTEGER         NULL
 );
 
-SELECT AddGeometryColumn('counter_timeline','geom','4326','POINT',2);
-GRANT ALL PRIVILEGES ON DATABASE counterkeyspace to bleedah;
 GRANT ALL PRIVILEGES ON TABLE counter_timeline to bleedah;
 
-CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
-select setup_timescaledb();
 SELECT create_hypertable('counter_timeline', 'time');
 
 
-ALTER TABLE counter_timeline ADD COLUMN id BIGINT;
 CREATE SEQUENCE counter_timeline_seq START 1;
-ALTER SEQUENCE counter_timeline_seq RESTART WITH 1;
-UPDATE counter_timeline SET id = nextval('counter_timeline_seq');
-ALTER TABLE counter_timeline ADD PRIMARY KEY (id);
 
-
-INSERT INTO counter_timeline(counter_id, time, avg_sec_gap, speed, cars_per_sec)
-  VALUES (?,?,?,?,?);
-
-
-CREATE SEQUENCE counter_seq START 1;
-
-CREATE TABLE counter (id, code, location) AS
-SELECT DISTINCT ON (ct.counter_id, ct.geom) nextval('counter_seq') as id, ct.counter_id as code, ct.geom as location FROM counter_timeline ct;
-
-CREATE INDEX counter_code_eq ON counter USING hash (code);
-
-
-CREATE TABLE counter AS SELECT DISTINCT ON (ct.counter_id, ct.geom) nextval('counter_seq') as 'id', ct.counter_id as 'code', ct.geom as 'location' FROM counter_timeline ct;
-GRANT ALL PRIVILEGES ON TABLE counter to bleedah;
-
-
+--WEATHER
 CREATE TABLE weather_timeline (
   time        TIMESTAMPTZ NOT NULL,
   counter_id  INTEGER REFERENCES counter (id),

@@ -43,6 +43,7 @@ public class CounterTimeline
     this.id = id;
   }
 
+  @Column(name = "time", columnDefinition= "TIMESTAMP WITH TIME ZONE")
   @Type(type="org.jadira.usertype.dateandtime.joda.PersistentDateTime")
   public DateTime getTime()
   {
