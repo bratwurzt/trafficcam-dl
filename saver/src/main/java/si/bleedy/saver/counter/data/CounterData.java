@@ -1,7 +1,7 @@
 package si.bleedy.saver.counter.data;
 
-import org.hibernate.annotations.ColumnTransformer;
-import org.hibernate.annotations.Formula;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.Point;
 
 import javax.persistence.*;
 
@@ -14,8 +14,7 @@ public class CounterData
 {
   private long id;
   private String code;
-  private Float lon;
-  private Float lat;
+  private Point location;
 
   public CounterData()
   {
@@ -25,12 +24,6 @@ public class CounterData
   {
     this.id = id;
     this.code = code;
-    this.lon = lon;
-    this.lat = lat;
-  }
-
-  @PostLoad
-  private void onLoad() {
   }
 
   @Id
@@ -54,25 +47,26 @@ public class CounterData
     this.code = code;
   }
 
-  @Formula(value = "ST_X(location)")
+  @Transient
   public Float getLon()
   {
-    return lon;
+    return (float)location.getX();
   }
 
-  public void setLon(Float lon)
-  {
-    this.lon = lon;
-  }
-
-    @Formula(value = "ST_Y(location)")
+  @Transient
   public Float getLat()
   {
-    return lat;
+    return (float)location.getY();
   }
 
-  public void setLat(Float lat)
+  @Column(columnDefinition = "geometry(Point,4326)")
+  public Point getLocation()
   {
-    this.lat = lat;
+    return location;
+  }
+
+  public void setLocation(Point location)
+  {
+    this.location = location;
   }
 }
