@@ -1,6 +1,5 @@
 package si.bleedy.saver.counter.data;
 
-import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.Point;
 
 import javax.persistence.*;

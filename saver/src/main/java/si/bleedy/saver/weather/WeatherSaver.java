@@ -3,17 +3,18 @@ package si.bleedy.saver.weather;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import si.bleedy.saver.counter.data.CounterData;
 import si.bleedy.saver.counter.service.CacheCounterRepository;
 import si.bleedy.saver.weather.client.WeatherClient;
 import si.bleedy.saver.weather.data.WeatherTimeline;
-import si.bleedy.saver.weather.pojos.WeatherDto;
+import si.bleedy.saver.weather.service.WeatherTimelineExtendedRepository;
 import si.bleedy.saver.weather.service.WeatherTimelineRepository;
 
+import java.util.AbstractMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author bratwurzt
@@ -28,12 +29,17 @@ public class WeatherSaver
   private final WeatherTimelineRepository weatherTimelineRepository;
   private final CacheCounterRepository cacheCounterRepository;
 
-  public WeatherSaver(WeatherClient weatherClient, WeatherTimelineRepository weatherTimelineRepository, CacheCounterRepository cacheCounterRepository)
+  @Autowired
+  public WeatherSaver(
+      WeatherClient weatherClient,
+      WeatherTimelineRepository weatherTimelineRepository,
+      WeatherTimelineExtendedRepository timelineExtendedRepository,
+      CacheCounterRepository cacheCounterRepository)
   {
+    lastModified = timelineExtendedRepository.findLastModified();
     this.weatherClient = weatherClient;
     this.weatherTimelineRepository = weatherTimelineRepository;
     this.cacheCounterRepository = cacheCounterRepository;
-    lastModified = new ConcurrentHashMap<>();
   }
 
   @Scheduled(fixedRate = 180000)
@@ -41,30 +47,31 @@ public class WeatherSaver
   {
     try
     {
-      short i = 0;
+      AtomicInteger counter = new AtomicInteger(0);
       Long lastChange = System.currentTimeMillis();
-      for (CounterData c : cacheCounterRepository.findAll())
-      {
-        final WeatherDto weather = weatherClient.getWeatherData(c.getLon(), c.getLat());
-        final DateTime modifiedTime = weather.getRadar().getUpdated();
-        if (!modifiedTime.equals(lastModified.get(c.getCode())))
-        {
-          weatherTimelineRepository.save(
-              new WeatherTimeline(
-                  modifiedTime,
-                  c,
-                  weather.getHailprob().getHailLevel(),
-                  weather.getRadar().getRainMmph()
-              )
-          );
-          i++;
-          lastModified.put(c.getCode(), modifiedTime);
-        }
-      }
+      cacheCounterRepository.findAll().stream()
+          .filter(c -> c.getLat() > 45.21 && c.getLat() < 47.05)
+          .filter(c -> c.getLon() > 12.92 && c.getLon() < 16.71)
+          .map(c -> new AbstractMap.SimpleEntry<>(c, weatherClient.getWeatherData(c.getLon(), c.getLat())))
+          .filter(entry -> entry.getValue() != null)
+          .filter(entry -> "ok".equals(entry.getValue().getStatus()))
+          .filter(entry -> !entry.getValue().getRadar().getUpdated().equals(lastModified.get(entry.getKey().getCode())))
+          .forEach(entry -> {
+            weatherTimelineRepository.save(
+                new WeatherTimeline(
+                    entry.getValue().getRadar().getUpdated(),
+                    entry.getKey(),
+                    entry.getValue().getHailprob().getHailLevel(),
+                    entry.getValue().getRadar().getRainMmph()
+                )
+            );
+            lastModified.put(entry.getKey().getCode(), entry.getValue().getRadar().getUpdated());
+            counter.getAndIncrement();
+          });
       long millis = System.currentTimeMillis() - lastChange;
-      if (i > 0)
+      if (counter.get() > 0)
       {
-        LOG.debug("Saved " + i + " of weather data in " + millis + "ms");
+        LOG.debug("Saved " + counter.get() + " of weather data in " + millis + "ms");
       }
     }
     catch (Exception e)

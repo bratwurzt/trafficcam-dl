@@ -18,6 +18,6 @@ public interface CounterRepository extends CrudRepository<CounterData, Long>
   void save(String code, double xCoordinates, double yCoordinates, String pasOpis);
 
   @Transactional
-  @Query(value = "SELECT id, code, ST_X(location) as lon, ST_Y(location) as lat FROM counter WHERE code = ?1", nativeQuery = true)
+  @Query(value = "SELECT id, code, location FROM counter WHERE code = ?1", nativeQuery = true)
   CounterData findByCode(String code);
 }

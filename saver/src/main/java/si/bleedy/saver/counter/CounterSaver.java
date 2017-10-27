@@ -12,6 +12,7 @@ import si.bleedy.saver.counter.pojos.Content;
 import si.bleedy.saver.counter.pojos.Counter;
 import si.bleedy.saver.counter.service.CacheCounterRepository;
 import si.bleedy.saver.counter.service.CounterTimelineRepository;
+import si.bleedy.saver.counter.service.impl.CounterTimelineExtendedRepositoryImpl;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,8 +31,13 @@ public class CounterSaver
   private final CounterTimelineRepository counterTimelineRepository;
 
   @Autowired
-  public CounterSaver(CountersClient countersClient, CacheCounterRepository cacheCounterRepository, CounterTimelineRepository counterTimelineRepository)
+  public CounterSaver(
+      CountersClient countersClient,
+      CacheCounterRepository cacheCounterRepository,
+      CounterTimelineRepository counterTimelineRepository,
+      CounterTimelineExtendedRepositoryImpl counterTimelineExtendedRepository)
   {
+    lastModified = counterTimelineExtendedRepository.findLastModified();
     this.countersClient = countersClient;
     this.cacheCounterRepository = cacheCounterRepository;
     this.counterTimelineRepository = counterTimelineRepository;
