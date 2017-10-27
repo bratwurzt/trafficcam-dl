@@ -4,6 +4,7 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -32,21 +33,25 @@ public class WeatherSaver
   private final WeatherTimelineRepository weatherTimelineRepository;
   private final CacheCounterRepository cacheCounterRepository;
 
+  private final Integer sleepMillis;
+
   @Autowired
   public WeatherSaver(
       WeatherClient weatherClient,
       WeatherTimelineRepository weatherTimelineRepository,
       WeatherTimelineExtendedRepository timelineExtendedRepository,
-      CacheCounterRepository cacheCounterRepository)
+      CacheCounterRepository cacheCounterRepository,
+      @Value("${saver.weather.sleepMillis}") Integer sleepMillis)
   {
     lastModified = timelineExtendedRepository.findLastModified();
     this.weatherClient = weatherClient;
     this.weatherTimelineRepository = weatherTimelineRepository;
     this.cacheCounterRepository = cacheCounterRepository;
+    this.sleepMillis = sleepMillis;
   }
 
   @Async
-  @Scheduled(fixedRate = 360000)
+  @Scheduled(fixedRateString = "${saver.weather.scheduledMillis}")
   public void saveWeatherData()
   {
     try
@@ -73,7 +78,7 @@ public class WeatherSaver
           i++;
           try
           {
-            Thread.sleep(500);
+            Thread.sleep(sleepMillis);
           }
           catch (InterruptedException ignored)
           {
