@@ -4,17 +4,20 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import si.bleedy.saver.counter.data.CounterData;
 import si.bleedy.saver.counter.service.CacheCounterRepository;
 import si.bleedy.saver.weather.client.WeatherClient;
 import si.bleedy.saver.weather.data.WeatherTimeline;
+import si.bleedy.saver.weather.pojos.WeatherDto;
 import si.bleedy.saver.weather.service.WeatherTimelineExtendedRepository;
 import si.bleedy.saver.weather.service.WeatherTimelineRepository;
 
-import java.util.AbstractMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * @author bratwurzt
@@ -42,36 +45,46 @@ public class WeatherSaver
     this.cacheCounterRepository = cacheCounterRepository;
   }
 
-  @Scheduled(fixedRate = 180000)
+  @Async
+  @Scheduled(fixedRate = 360000)
   public void saveWeatherData()
   {
     try
     {
-      AtomicInteger counter = new AtomicInteger(0);
       Long lastChange = System.currentTimeMillis();
-      cacheCounterRepository.findAll().stream()
+      List<CounterData> counterDataList = cacheCounterRepository.findAll().stream()
           .filter(c -> c.getLat() > 45.21 && c.getLat() < 47.05)
           .filter(c -> c.getLon() > 12.92 && c.getLon() < 16.71)
-          .map(c -> new AbstractMap.SimpleEntry<>(c, weatherClient.getWeatherData(c.getLon(), c.getLat())))
-          .filter(entry -> entry.getValue() != null)
-          .filter(entry -> "ok".equals(entry.getValue().getStatus()))
-          .filter(entry -> !entry.getValue().getRadar().getUpdated().equals(lastModified.get(entry.getKey().getCode())))
-          .forEach(entry -> {
-            weatherTimelineRepository.save(
-                new WeatherTimeline(
-                    entry.getValue().getRadar().getUpdated(),
-                    entry.getKey(),
-                    entry.getValue().getHailprob().getHailLevel(),
-                    entry.getValue().getRadar().getRainMmph()
-                )
-            );
-            lastModified.put(entry.getKey().getCode(), entry.getValue().getRadar().getUpdated());
-            counter.getAndIncrement();
-          });
-      long millis = System.currentTimeMillis() - lastChange;
-      if (counter.get() > 0)
+          .collect(Collectors.toList());
+      int i = 0;
+      for (CounterData c : counterDataList)
       {
-        LOG.debug("Saved " + counter.get() + " of weather data in " + millis + "ms");
+        WeatherDto w = weatherClient.getWeatherData(c.getLon(), c.getLat());
+        if (w != null && "ok".equals(w.getStatus()) && !w.getRadar().getUpdated().equals(lastModified.get(c.getCode())))
+        {
+          weatherTimelineRepository.save(
+              new WeatherTimeline(
+                  w.getRadar().getUpdated(),
+                  c,
+                  w.getHailprob().getHailLevel(),
+                  w.getRadar().getRainMmph()
+              ));
+          lastModified.put(c.getCode(), w.getRadar().getUpdated());
+          i++;
+          try
+          {
+            Thread.sleep(500);
+          }
+          catch (InterruptedException ignored)
+          {
+          }
+        }
+      }
+
+      long millis = System.currentTimeMillis() - lastChange;
+      if (i > 0)
+      {
+        LOG.debug("Saved " + i + " of weather data in " + millis / 1000 + "s");
       }
     }
     catch (Exception e)

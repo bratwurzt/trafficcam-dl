@@ -22,6 +22,10 @@ public class WeatherTimeline
   private Short hailprobLevel;
   private Float rainMmph;
 
+  public WeatherTimeline()
+  {
+  }
+
   public WeatherTimeline(DateTime time, CounterData counter, short hailprobLevel, Float rainMmph)
   {
     this.time = time;

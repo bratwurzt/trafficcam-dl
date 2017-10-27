@@ -22,6 +22,10 @@ public class CounterTimeline
   private Integer speed;
   private Integer carsPerSec;
 
+  public CounterTimeline()
+  {
+  }
+
   public CounterTimeline(DateTime time, CounterData counter, Float avgSecGap, Integer speed, Integer carsPerSec)
   {
     setTime(time);

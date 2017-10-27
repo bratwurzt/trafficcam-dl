@@ -4,6 +4,7 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import si.bleedy.saver.counter.client.CountersClient;
@@ -43,7 +44,8 @@ public class CounterSaver
     this.counterTimelineRepository = counterTimelineRepository;
   }
 
-  @Scheduled(fixedRate = 180000)
+  @Async
+  @Scheduled(fixedRate = 240000)
   public void saveCounters()
   {
     final Counter counters = countersClient.getCounters();
@@ -74,7 +76,7 @@ public class CounterSaver
         lastModified = modifiedTime;
         long millis = System.currentTimeMillis() - lastChange;
 
-        LOG.debug("Saved " + counterTimelines.size() + " counters in " + millis + "ms");
+        LOG.debug("Saved " + counterTimelines.size() + " counters in " + millis/1000 + "s");
       }
     }
     catch (Exception e)
