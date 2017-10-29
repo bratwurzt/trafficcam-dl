@@ -76,7 +76,7 @@ public class CounterSaver
         lastModified = modifiedTime;
         long millis = System.currentTimeMillis() - lastChange;
 
-        LOG.debug("Saved " + counterTimelines.size() + " counters in " + millis/1000 + "s");
+        LOG.debug("Saved " + counterTimelines.size() + " counters in " + millis / 1000 + "s");
       }
     }
     catch (Exception e)
