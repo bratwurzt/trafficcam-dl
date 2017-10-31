@@ -55,11 +55,48 @@ CREATE TABLE weather_timeline (
   rain_mmph FLOAT NOT NULL
 );
 GRANT ALL PRIVILEGES ON TABLE weather_timeline to bleedah;
-SELECT create_hypertable('weather_timeline', 'time');
 
 
-INSERT INTO observations(name, unit, timestamp, value)
-		VALUES ();
+
+
+--CAR TOW
+
+CREATE TABLE car (
+  id          SERIAL PRIMARY KEY,
+  brand      TEXT NOT NULL,
+  model      TEXT NOT NULL,
+  colour      TEXT NOT NULL
+);
+
+CREATE TABLE street (
+  id        SERIAL PRIMARY KEY,
+  name      TEXT NOT NULL
+);
+
+CREATE TABLE tow_timeline (
+  id          SERIAL PRIMARY KEY,
+  car_id      BIGINT NOT NULL REFERENCES car(id),
+  street_id   BIGINT NOT NULL REFERENCES street(id),
+  day_towed   DATE NOT NULL,
+  created     TIMESTAMP NOT NULL,
+  time_picked_up TIMESTAMP
+);
+
+GRANT ALL PRIVILEGES ON TABLE tow_timeline to bleedah;
+GRANT ALL PRIVILEGES ON TABLE car to bleedah;
+GRANT ALL PRIVILEGES ON TABLE street to bleedah;
+
+
+SELECT tt.id FROM tow_timeline tt, car c, street s WHERE tt.car_id = c.id AND tt.street_id = s.id AND c.brand=?1 AND c.model=?2 AND c.colour=?3 AND s.name=?4 AND tt.dayTowed=?5
+
+INSERT INTO car(brand, model, colour) VALUES(?1, ?2, ?3) ON CONFLICT DO NOTHING RETURNING id;
+INSERT INTO tow_timeline(car_id, street_id, day_towed, created) VALUES(select c.id from car c where c.brand=?1 and c.model) ON CONFLICT DO NOTHING;
+
+
+
+
+
+
 
 CREATE TABLE sleep(
 	timestamp_start bigint,

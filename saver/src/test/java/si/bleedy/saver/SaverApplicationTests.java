@@ -1,5 +1,7 @@
 package si.bleedy.saver;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,9 +10,12 @@ import org.springframework.test.context.junit4.SpringRunner;
 import si.bleedy.saver.weather.client.WeatherClient;
 import si.bleedy.saver.weather.pojos.WeatherDto;
 
+import java.io.IOException;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class SaverApplicationTests {
+public class SaverApplicationTests
+{
 
   private WeatherClient weatherClient;
 
@@ -21,16 +26,17 @@ public class SaverApplicationTests {
   }
 
   @Test
-	public void contextLoads() {
-	}
+  public void contextLoads()
+  {
+  }
 
-	@Test
-	public void testNon200Reponses()
+  @Test
+  public void testNon200Reponses()
   {
     WeatherDto weatherData;
     try
     {
-      while(true)
+      while (true)
       {
         weatherData = weatherClient.getWeatherData(15.889921f, 46.43844f);
       }
@@ -38,6 +44,20 @@ public class SaverApplicationTests {
     catch (Exception e)
     {
       e.printStackTrace();
+    }
+  }
+
+  @Test
+  public void testTowJsoup()
+  {
+    try
+    {
+      Document doc = Jsoup.connect("http://www.lpt.si/parkirisca_pajki/parkirisca/zapuscena_vozila").get();
+      System.out.println();
+    }
+    catch (IOException e)
+    {
+      System.out.println();
     }
   }
 }
