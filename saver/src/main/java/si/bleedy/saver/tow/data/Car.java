@@ -9,7 +9,7 @@ import javax.persistence.*;
 @Table(name = "car",
     uniqueConstraints =
     @UniqueConstraint(name = "car_uq", columnNames = {"brand", "model", "colour"}))
-public class Car
+public class Car implements Comparable<Car>
 {
   private Long id;
   private String brand;
@@ -107,5 +107,20 @@ public class Car
     result = 31 * result + model.hashCode();
     result = 31 * result + colour.hashCode();
     return result;
+  }
+
+  @Override
+  public int compareTo(Car o)
+  {
+    int delta = brand.compareTo(o.getBrand());
+    if (delta == 0)
+    {
+      delta = model.compareTo(o.getModel());
+    }
+    if (delta == 0)
+    {
+      delta = colour.compareTo(o.getColour());
+    }
+    return delta;
   }
 }

@@ -134,7 +134,7 @@
                             <fromFile>${project.build.directory}/${project.build.finalName}.jar</fromFile>
                             <url>scp://pi:mininova3@192.168.1.7/home/pi/</url>
                             <commands>
-                                <command>./stop-counters.sh; ./start-counters.sh</command>
+                                <command>./stop-counters.sh; sleep 1; ./start-counters.sh</command>
                             </commands>
                             <failOnError>false</failOnError>
                         </configuration>

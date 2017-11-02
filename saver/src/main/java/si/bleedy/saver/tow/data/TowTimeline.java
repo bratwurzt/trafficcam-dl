@@ -13,7 +13,7 @@ import javax.persistence.*;
 @Table(name = "tow_timeline",
     uniqueConstraints =
     @UniqueConstraint(columnNames = {"car_id", "street_id", "dayTowed"}))
-public class TowTimeline
+public class TowTimeline implements Comparable<TowTimeline>
 {
   private Long id;
   private Car car;
@@ -141,5 +141,28 @@ public class TowTimeline
     result = 31 * result + street.hashCode();
     result = 31 * result + dayTowed.hashCode();
     return result;
+  }
+
+  @Override
+  public int compareTo(TowTimeline o)
+  {
+    if (this == o)
+    {
+      return 0;
+    }
+    int delta = dayTowed.compareTo(o.getDayTowed());
+    if (delta == 0)
+    {
+      delta = created.compareTo(o.getCreated());
+    }
+    if (delta == 0)
+    {
+      delta = car.compareTo(o.getCar());
+    }
+    if (delta == 0)
+    {
+      delta = street.compareTo(o.getStreet());
+    }
+    return delta;
   }
 }

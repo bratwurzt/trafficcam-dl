@@ -9,7 +9,7 @@ import javax.persistence.*;
 @Table(name = "street",
     uniqueConstraints =
     @UniqueConstraint(name = "street_uq", columnNames = {"name"}))
-public class Street
+public class Street implements Comparable<Street>
 {
   private Long id;
   private String name;
@@ -72,5 +72,11 @@ public class Street
   public int hashCode()
   {
     return name.hashCode();
+  }
+
+  @Override
+  public int compareTo(Street o)
+  {
+    return name.compareTo(o.getName());
   }
 }

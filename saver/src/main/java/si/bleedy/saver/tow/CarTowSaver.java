@@ -82,44 +82,53 @@ public class CarTowSaver
                 throw new RuntimeException(e);
               }
             })
-            .filter(tt -> towTimelineCrudRepository.find(
-                tt.getCar().getBrand(),
-                tt.getCar().getModel(),
-                tt.getCar().getColour(),
-                tt.getStreet().getName(),
-                tt.getDayTowed()
-            ) == null)
             .collect(Collectors.toSet());
 
         if (!towTimelines.isEmpty())
         {
-          long count = 0;
+          long savedCount = 0, updatedCount = 0;
           if (TOW_TIMELINES.isEmpty())
           {
             TOW_TIMELINES.addAll(towTimelines);
-            Iterable<TowTimeline> savedTowTimelines = towTimelineCrudRepository.save(TOW_TIMELINES);
-            count = savedTowTimelines.spliterator().getExactSizeIfKnown();
+            Set<TowTimeline> filteredTowTimelines = TOW_TIMELINES.stream()
+                .filter(tt -> towTimelineCrudRepository.find(
+                    tt.getCar().getBrand(),
+                    tt.getCar().getModel(),
+                    tt.getCar().getColour(),
+                    tt.getStreet().getName(),
+                    tt.getDayTowed()) == null)
+                .collect(Collectors.toSet());
+            if (!filteredTowTimelines.isEmpty())
+            {
+              Iterable<TowTimeline> savedTowTimelines = towTimelineCrudRepository.save(filteredTowTimelines);
+              savedCount = savedTowTimelines.spliterator().getExactSizeIfKnown();
+            }
           }
           else
           {
             Set<TowTimeline> intersection = intersection(TOW_TIMELINES, towTimelines);
             Set<TowTimeline> changesOnOldSet = difference(TOW_TIMELINES, intersection);
-            count += changesOnOldSet.stream()
+            updatedCount += changesOnOldSet.stream()
                 .map(towTimeline -> {
                   towTimeline.setTimePickedUp(modified);
                   return towTimelineCrudRepository.save(towTimeline);
                 })
                 .count();
             Set<TowTimeline> changesOnNewSet = difference(towTimelines, intersection);
-            count += changesOnNewSet.stream()
+            savedCount += changesOnNewSet.stream()
                 .map(towTimelineCrudRepository::save)
                 .count();
           }
           long millis = System.currentTimeMillis() - lastChange;
-          if (count > 0)
+          if (savedCount > 0)
           {
-            LOG.debug("Saved " + count + " of car tow data in " + millis / 1000 + "s");
+            LOG.debug("Saved " + savedCount + " of car tow data in " + millis / 1000 + "s");
           }
+          if (updatedCount > 0)
+          {
+            LOG.debug("Updated " + updatedCount + " of car tow data in " + millis / 1000 + "s");
+          }
+
         }
         lastModified = modified;
       }
@@ -139,14 +148,8 @@ public class CarTowSaver
 
   private <T> Set<T> intersection(Set<T> setA, Set<T> setB)
   {
-    Set<T> tmp = new TreeSet<T>();
-    for (T x : setA)
-    {
-      if (setB.contains(x))
-      {
-        tmp.add(x);
-      }
-    }
+    Set<T> tmp = new TreeSet<T>(setA);
+    tmp.retainAll(setB);
     return tmp;
   }
 
