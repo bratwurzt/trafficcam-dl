@@ -112,6 +112,10 @@ public class Car implements Comparable<Car>
   @Override
   public int compareTo(Car o)
   {
+    if (this == o)
+    {
+      return 0;
+    }
     int delta = brand.compareTo(o.getBrand());
     if (delta == 0)
     {

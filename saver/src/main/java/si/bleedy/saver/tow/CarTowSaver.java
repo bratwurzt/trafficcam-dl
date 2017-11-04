@@ -59,7 +59,7 @@ public class CarTowSaver
       Document doc = Jsoup.connect("http://www.lpt.si/parkirisca_pajki/parkirisca/zapuscena_vozila").get();
       String modifiedString = doc.select("div[class=title_1_bg head_bg rightside]").first().text();
       DateTime modified = new DateTime(dateFormatter.parse(modifiedString.substring("Zadnja posodobitev: ".length())).getTime());
-      if (lastModified == null || modified.equals(lastModified))
+      if (!modified.equals(lastModified))
       {
         Long lastChange = System.currentTimeMillis();
         DateTime created = new DateTime();
@@ -107,17 +107,26 @@ public class CarTowSaver
           else
           {
             Set<TowTimeline> intersection = intersection(TOW_TIMELINES, towTimelines);
-            Set<TowTimeline> changesOnOldSet = difference(TOW_TIMELINES, intersection);
-            updatedCount += changesOnOldSet.stream()
-                .map(towTimeline -> {
-                  towTimeline.setTimePickedUp(modified);
-                  return towTimelineCrudRepository.save(towTimeline);
-                })
-                .count();
-            Set<TowTimeline> changesOnNewSet = difference(towTimelines, intersection);
-            savedCount += changesOnNewSet.stream()
-                .map(towTimelineCrudRepository::save)
-                .count();
+            if (!intersection.isEmpty())
+            {
+              Set<TowTimeline> changesOnOldSet = difference(TOW_TIMELINES, intersection);
+              updatedCount += changesOnOldSet.stream()
+                  .map(towTimeline -> {
+                    towTimeline.setTimePickedUp(modified);
+                    return towTimelineCrudRepository.save(towTimeline);
+                  })
+                  .count();
+              Set<TowTimeline> changesOnNewSet = difference(towTimelines, intersection);
+              savedCount += changesOnNewSet.stream()
+                  .filter(tt -> towTimelineCrudRepository.find(
+                      tt.getCar().getBrand(),
+                      tt.getCar().getModel(),
+                      tt.getCar().getColour(),
+                      tt.getStreet().getName(),
+                      tt.getDayTowed()) == null)
+                  .map(towTimelineCrudRepository::save)
+                  .count();
+            }
           }
           long millis = System.currentTimeMillis() - lastChange;
           if (savedCount > 0)

@@ -132,7 +132,7 @@
                         </goals>
                         <configuration>
                             <fromFile>${project.build.directory}/${project.build.finalName}.jar</fromFile>
-                            <url>scp://pi:mininova3@192.168.1.7/home/pi/</url>
+                            <url>scp://pi:mininova3@192.168.1.7/home/pi</url>
                             <commands>
                                 <command>./stop-counters.sh; sleep 1; ./start-counters.sh</command>
                             </commands>
@@ -147,7 +147,7 @@
     <distributionManagement>
         <repository>
             <id>my-ssh-repo</id>
-            <url>scp://192.168.1.7/home/pi/</url>
+            <url>scp://192.168.1.7/home/pi</url>
         </repository>
     </distributionManagement>
 

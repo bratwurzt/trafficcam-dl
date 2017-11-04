@@ -77,6 +77,10 @@ public class Street implements Comparable<Street>
   @Override
   public int compareTo(Street o)
   {
+    if (this == o)
+    {
+      return 0;
+    }
     return name.compareTo(o.getName());
   }
 }
