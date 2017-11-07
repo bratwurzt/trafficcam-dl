@@ -126,6 +126,8 @@ public class CarTowSaver
                       tt.getDayTowed()) == null)
                   .map(towTimelineCrudRepository::save)
                   .count();
+              TOW_TIMELINES.clear();
+              TOW_TIMELINES.addAll(towTimelines);
             }
           }
           long millis = System.currentTimeMillis() - lastChange;
