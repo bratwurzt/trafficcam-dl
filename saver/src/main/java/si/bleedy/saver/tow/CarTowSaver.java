@@ -54,97 +54,109 @@ public class CarTowSaver
   @Scheduled(fixedRateString = "${saver.tow.scheduledMillis:300000}")
   public void saveCounters()
   {
+    int retries = 0;
     try
     {
-      Document doc = Jsoup.connect("http://www.lpt.si/parkirisca_pajki/parkirisca/zapuscena_vozila").get();
-      String modifiedString = doc.select("div[class=title_1_bg head_bg rightside]").first().text();
-      DateTime modified = new DateTime(dateFormatter.parse(modifiedString.substring("Zadnja posodobitev: ".length())).getTime());
-      if (!modified.equals(lastModified))
+      while (retries++ < 5)
       {
-        Long lastChange = System.currentTimeMillis();
-        DateTime created = new DateTime();
-        Set<TowTimeline> towTimelines = doc.select("tr[class^=table_list]").stream()
-            .map(el -> {
-              try
-              {
-                return new TowTimeline(
-                    carRepository.findOne(carRepository.save(
-                        el.select("td").get(0).text(),
-                        el.select("td").get(1).text(),
-                        el.select("td").get(2).text())),
-                    streetRepository.findOne(streetRepository.save(el.select("td").get(3).text())),
-                    new DateTime(dayDateFormatter.parse(el.select("td").get(4).text()).getTime()),
-                    created
-                );
-              }
-              catch (ParseException e)
-              {
-                throw new RuntimeException(e);
-              }
-            })
-            .collect(Collectors.toSet());
-
-        if (!towTimelines.isEmpty())
+        try
         {
-          long savedCount = 0, updatedCount = 0;
-          if (TOW_TIMELINES.isEmpty())
+          Document doc = Jsoup.connect("http://www.lpt.si/parkirisca_pajki/parkirisca/zapuscena_vozila").get();
+          String modifiedString = doc.select("div[class=title_1_bg head_bg rightside]").first().text();
+          DateTime modified = new DateTime(dateFormatter.parse(modifiedString.substring("Zadnja posodobitev: ".length())).getTime());
+          if (!modified.equals(lastModified))
           {
-            TOW_TIMELINES.addAll(towTimelines);
-            Set<TowTimeline> filteredTowTimelines = TOW_TIMELINES.stream()
-                .filter(tt -> towTimelineCrudRepository.find(
-                    tt.getCar().getBrand(),
-                    tt.getCar().getModel(),
-                    tt.getCar().getColour(),
-                    tt.getStreet().getName(),
-                    tt.getDayTowed()) == null)
+            Long lastChange = System.currentTimeMillis();
+            DateTime created = new DateTime();
+            Set<TowTimeline> towTimelines = doc.select("tr[class^=table_list]").stream()
+                .map(el -> {
+                  try
+                  {
+                    return new TowTimeline(
+                        carRepository.findOne(carRepository.save(
+                            el.select("td").get(0).text(),
+                            el.select("td").get(1).text(),
+                            el.select("td").get(2).text())),
+                        streetRepository.findOne(streetRepository.save(el.select("td").get(3).text())),
+                        new DateTime(dayDateFormatter.parse(el.select("td").get(4).text()).getTime()),
+                        created
+                    );
+                  }
+                  catch (ParseException e)
+                  {
+                    throw new RuntimeException(e);
+                  }
+                })
                 .collect(Collectors.toSet());
-            if (!filteredTowTimelines.isEmpty())
-            {
-              Iterable<TowTimeline> savedTowTimelines = towTimelineCrudRepository.save(filteredTowTimelines);
-              savedCount = savedTowTimelines.spliterator().getExactSizeIfKnown();
-            }
-          }
-          else
-          {
-            Set<TowTimeline> intersection = intersection(TOW_TIMELINES, towTimelines);
-            if (!intersection.isEmpty())
-            {
-              Set<TowTimeline> changesOnOldSet = difference(TOW_TIMELINES, intersection);
-              updatedCount += changesOnOldSet.stream()
-                  .map(towTimeline -> {
-                    towTimeline.setTimePickedUp(modified);
-                    return towTimelineCrudRepository.save(towTimeline);
-                  })
-                  .count();
-              Set<TowTimeline> changesOnNewSet = difference(towTimelines, intersection);
-              savedCount += changesOnNewSet.stream()
-                  .filter(tt -> towTimelineCrudRepository.find(
-                      tt.getCar().getBrand(),
-                      tt.getCar().getModel(),
-                      tt.getCar().getColour(),
-                      tt.getStreet().getName(),
-                      tt.getDayTowed()) == null)
-                  .map(towTimelineCrudRepository::save)
-                  .count();
-              TOW_TIMELINES.clear();
-              TOW_TIMELINES.addAll(towTimelines);
-            }
-          }
-          long millis = System.currentTimeMillis() - lastChange;
-          if (savedCount > 0)
-          {
-            LOG.debug("Saved " + savedCount + " of car tow data in " + millis / 1000 + "s");
-          }
-          if (updatedCount > 0)
-          {
-            LOG.debug("Updated " + updatedCount + " of car tow data in " + millis / 1000 + "s");
-          }
 
+            if (!towTimelines.isEmpty())
+            {
+              long savedCount = 0, updatedCount = 0;
+              if (TOW_TIMELINES.isEmpty())
+              {
+                TOW_TIMELINES.addAll(towTimelines);
+                Set<TowTimeline> filteredTowTimelines = TOW_TIMELINES.stream()
+                    .filter(tt -> towTimelineCrudRepository.find(
+                        tt.getCar().getBrand(),
+                        tt.getCar().getModel(),
+                        tt.getCar().getColour(),
+                        tt.getStreet().getName(),
+                        tt.getDayTowed()) == null)
+                    .collect(Collectors.toSet());
+                if (!filteredTowTimelines.isEmpty())
+                {
+                  Iterable<TowTimeline> savedTowTimelines = towTimelineCrudRepository.save(filteredTowTimelines);
+                  savedCount = savedTowTimelines.spliterator().getExactSizeIfKnown();
+                }
+              }
+              else
+              {
+                Set<TowTimeline> intersection = intersection(TOW_TIMELINES, towTimelines);
+                if (!intersection.isEmpty())
+                {
+                  Set<TowTimeline> changesOnOldSet = difference(TOW_TIMELINES, intersection);
+                  updatedCount += changesOnOldSet.stream()
+                      .map(towTimeline -> {
+                        towTimeline.setTimePickedUp(modified);
+                        return towTimelineCrudRepository.save(towTimeline);
+                      })
+                      .count();
+                  Set<TowTimeline> changesOnNewSet = difference(towTimelines, intersection);
+                  savedCount += changesOnNewSet.stream()
+                      .filter(tt -> towTimelineCrudRepository.find(
+                          tt.getCar().getBrand(),
+                          tt.getCar().getModel(),
+                          tt.getCar().getColour(),
+                          tt.getStreet().getName(),
+                          tt.getDayTowed()) == null)
+                      .map(towTimelineCrudRepository::save)
+                      .count();
+                  TOW_TIMELINES.clear();
+                  TOW_TIMELINES.addAll(towTimelines);
+                }
+              }
+              long millis = System.currentTimeMillis() - lastChange;
+              if (savedCount > 0)
+              {
+                LOG.debug("Saved " + savedCount + " of car tow data in " + millis / 1000 + "s");
+              }
+              if (updatedCount > 0)
+              {
+                LOG.debug("Updated " + updatedCount + " of car tow data in " + millis / 1000 + "s");
+              }
+
+            }
+            lastModified = modified;
+          }
         }
-        lastModified = modified;
+        catch (IOException e)
+        {
+          LOG.error("Error, retry " + retries, e);
+          Thread.sleep(5000);
+        }
       }
     }
-    catch (IOException | ParseException e)
+    catch (ParseException | InterruptedException e)
     {
       LOG.error("Error: ", e);
     }
