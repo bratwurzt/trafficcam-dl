@@ -6,9 +6,10 @@
     <groupId>si.bleedy</groupId>
     <artifactId>trafficcam-dl</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.1-SNAPSHOT</version>
     <modules>
         <module>counters</module>
+        <module>policija</module>
     </modules>
 
     <properties>
