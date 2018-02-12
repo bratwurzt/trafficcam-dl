@@ -1,6 +1,7 @@
 package si.bleedy.saver.tow;
 
 import org.joda.time.DateTime;
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -52,7 +54,7 @@ public class CarTowSaver
 
   @Async
   @Scheduled(fixedRateString = "${saver.tow.scheduledMillis:300000}")
-  public void saveCounters()
+  public void saveCarTows()
   {
     int retries = 0;
     try
@@ -61,7 +63,16 @@ public class CarTowSaver
       {
         try
         {
-          Document doc = Jsoup.connect("http://www.lpt.si/parkirisca_pajki/parkirisca/zapuscena_vozila").get();
+          Connection connect = Jsoup.connect("http://www.lpt.si/parkirisca_pajki/parkirisca/zapuscena_vozila");
+          if (connect == null)
+          {
+            continue;
+          }
+          Document doc = connect.get();
+          if (doc == null)
+          {
+            continue;
+          }
           String modifiedString = doc.select("div[class=title_1_bg head_bg rightside]").first().text();
           DateTime modified = new DateTime(dateFormatter.parse(modifiedString.substring("Zadnja posodobitev: ".length())).getTime());
           if (!modified.equals(lastModified))
@@ -114,25 +125,41 @@ public class CarTowSaver
                 Set<TowTimeline> intersection = intersection(TOW_TIMELINES, towTimelines);
                 if (!intersection.isEmpty())
                 {
-                  Set<TowTimeline> changesOnOldSet = difference(TOW_TIMELINES, intersection);
-                  updatedCount += changesOnOldSet.stream()
-                      .map(towTimeline -> {
-                        towTimeline.setTimePickedUp(modified);
-                        return towTimelineCrudRepository.save(towTimeline);
-                      })
-                      .count();
-                  Set<TowTimeline> changesOnNewSet = difference(towTimelines, intersection);
-                  savedCount += changesOnNewSet.stream()
-                      .filter(tt -> towTimelineCrudRepository.find(
-                          tt.getCar().getBrand(),
-                          tt.getCar().getModel(),
-                          tt.getCar().getColour(),
-                          tt.getStreet().getName(),
-                          tt.getDayTowed()) == null)
-                      .map(towTimelineCrudRepository::save)
-                      .count();
-                  TOW_TIMELINES.clear();
-                  TOW_TIMELINES.addAll(towTimelines);
+                  try
+                  {
+                    Set<TowTimeline> changesOnOldSet = difference(TOW_TIMELINES, intersection);
+                    updatedCount += changesOnOldSet.stream()
+                        .map(towTimeline -> {
+                          towTimeline.setTimePickedUp(modified);
+                          TowTimeline save = null;
+                          try
+                          {
+                            save = towTimelineCrudRepository.save(towTimeline);
+                          }
+                          catch (Exception e)
+                          {
+                            LOG.error("Error while saving towTimeline", e);
+                          }
+                          return save;
+                        })
+                        .filter(Objects::nonNull)
+                        .count();
+                    Set<TowTimeline> changesOnNewSet = difference(towTimelines, intersection);
+                    savedCount += changesOnNewSet.stream()
+                        .filter(tt -> towTimelineCrudRepository.find(
+                            tt.getCar().getBrand(),
+                            tt.getCar().getModel(),
+                            tt.getCar().getColour(),
+                            tt.getStreet().getName(),
+                            tt.getDayTowed()) == null)
+                        .map(towTimelineCrudRepository::save)
+                        .count();
+                  }
+                  finally
+                  {
+                    TOW_TIMELINES.clear();
+                    TOW_TIMELINES.addAll(towTimelines);
+                  }
                 }
               }
               long millis = System.currentTimeMillis() - lastChange;
