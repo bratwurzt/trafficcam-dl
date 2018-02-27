@@ -6,6 +6,5 @@ import si.bleedy.saver.counter.data.CounterTimeline;
 /**
  * @author bratwurzt
  */
-public interface CounterTimelineRepository extends CrudRepository<CounterTimeline, Long>
-{
+public interface CounterTimelineRepository extends CrudRepository<CounterTimeline, Long> {
 }

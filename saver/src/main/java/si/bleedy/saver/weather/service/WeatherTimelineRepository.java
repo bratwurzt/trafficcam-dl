@@ -6,6 +6,5 @@ import si.bleedy.saver.weather.data.WeatherTimeline;
 /**
  * @author bratwurzt
  */
-public interface WeatherTimelineRepository extends CrudRepository<WeatherTimeline, Long>
-{
+public interface WeatherTimelineRepository extends CrudRepository<WeatherTimeline, Long> {
 }

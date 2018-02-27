@@ -10,19 +10,15 @@ import java.io.IOException;
 /**
  * @author bratwurzt
  */
-public class IntegerDeserializer extends StdScalarDeserializer<Integer>
-{
-  protected IntegerDeserializer()
-  {
+public class IntegerDeserializer extends StdScalarDeserializer<Integer> {
+  protected IntegerDeserializer() {
     super(Integer.class);
   }
 
   @Override
-  public Integer deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException
-  {
+  public Integer deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
     JsonToken currentToken = jsonParser.getCurrentToken();
-    if (currentToken == JsonToken.VALUE_STRING)
-    {
+    if (currentToken == JsonToken.VALUE_STRING) {
       String dateTimeAsString = jsonParser.getText().trim();
       return Integer.parseInt(dateTimeAsString);
     }

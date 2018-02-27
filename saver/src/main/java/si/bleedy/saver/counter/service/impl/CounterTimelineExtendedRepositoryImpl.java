@@ -13,23 +13,19 @@ import java.util.List;
  * @author bratwurzt
  */
 @Service
-public class CounterTimelineExtendedRepositoryImpl
-{
+public class CounterTimelineExtendedRepositoryImpl {
   private final EntityManager entityManager;
 
   @Autowired
-  public CounterTimelineExtendedRepositoryImpl(EntityManager entityManager)
-  {
+  public CounterTimelineExtendedRepositoryImpl(EntityManager entityManager) {
     this.entityManager = entityManager;
   }
 
-  public DateTime findLastModified()
-  {
+  public DateTime findLastModified() {
     final Query nativeQuery = entityManager.createNativeQuery("SELECT c.time from counter_timeline c where c.id = (select max(id) from counter_timeline)");
 
-    @SuppressWarnings("unchecked")
-    final List<Object> resultList = nativeQuery.getResultList();
-    
-    return resultList.iterator().hasNext() ? new DateTime(((Timestamp)resultList.iterator().next()).getTime()) : null;
+    @SuppressWarnings("unchecked") final List<Object> resultList = nativeQuery.getResultList();
+
+    return resultList.iterator().hasNext() ? new DateTime(((Timestamp) resultList.iterator().next()).getTime()) : null;
   }
 }

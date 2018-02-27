@@ -11,19 +11,15 @@ import java.io.IOException;
 /**
  * @author bratwurzt
  */
-public class JodaDateDeserializer extends StdScalarDeserializer<DateTime>
-{
-  protected JodaDateDeserializer()
-  {
+public class JodaDateDeserializer extends StdScalarDeserializer<DateTime> {
+  protected JodaDateDeserializer() {
     super(DateTime.class);
   }
 
   @Override
-  public DateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException
-  {
+  public DateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
     JsonToken currentToken = jsonParser.getCurrentToken();
-    if (currentToken == JsonToken.VALUE_STRING)
-    {
+    if (currentToken == JsonToken.VALUE_STRING) {
       String dateTimeAsString = jsonParser.getText().trim();
       return new DateTime(dateTimeAsString);
     }

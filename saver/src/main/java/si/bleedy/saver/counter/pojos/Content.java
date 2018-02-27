@@ -18,8 +18,7 @@ import java.util.Map;
     "ETag",
     "Data"
 })
-public class Content
-{
+public class Content {
   @JsonProperty("Language")
   private String language;
   @JsonProperty("ModifiedTime")
@@ -38,100 +37,84 @@ public class Content
   private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
   @JsonProperty("Language")
-  public String getLanguage()
-  {
+  public String getLanguage() {
     return language;
   }
 
   @JsonProperty("Language")
-  public void setLanguage(String language)
-  {
+  public void setLanguage(String language) {
     this.language = language;
   }
 
   @JsonProperty("ModifiedTime")
   @JsonDeserialize(using = JodaDateDeserializer.class)
-  public DateTime getModifiedTime()
-  {
+  public DateTime getModifiedTime() {
     return modifiedTime;
   }
 
   @JsonProperty("ModifiedTime")
-  public void setModifiedTime(DateTime modifiedTime)
-  {
+  public void setModifiedTime(DateTime modifiedTime) {
     this.modifiedTime = modifiedTime;
   }
 
   @JsonProperty("IsModified")
-  public Boolean getIsModified()
-  {
+  public Boolean getIsModified() {
     return isModified;
   }
 
   @JsonProperty("IsModified")
-  public void setIsModified(Boolean isModified)
-  {
+  public void setIsModified(Boolean isModified) {
     this.isModified = isModified;
   }
 
   @JsonProperty("ContentName")
-  public String getContentName()
-  {
+  public String getContentName() {
     return contentName;
   }
 
   @JsonProperty("ContentName")
-  public void setContentName(String contentName)
-  {
+  public void setContentName(String contentName) {
     this.contentName = contentName;
   }
 
   @JsonProperty("Expires")
   @JsonDeserialize(using = JodaDateDeserializer.class)
-  public DateTime getExpires()
-  {
+  public DateTime getExpires() {
     return expires;
   }
 
   @JsonProperty("Expires")
-  public void setExpires(DateTime expires)
-  {
+  public void setExpires(DateTime expires) {
     this.expires = expires;
   }
 
   @JsonProperty("ETag")
-  public String getETag()
-  {
+  public String getETag() {
     return eTag;
   }
 
   @JsonProperty("ETag")
-  public void setETag(String eTag)
-  {
+  public void setETag(String eTag) {
     this.eTag = eTag;
   }
 
   @JsonProperty("Data")
-  public Data getData()
-  {
+  public Data getData() {
     return data;
   }
 
   @JsonProperty("Data")
-  public void setData(Data data)
-  {
+  public void setData(Data data) {
     this.data = data;
   }
 
   @JsonAnyGetter
-  public Map<String, Object> getAdditionalProperties()
-  {
+  public Map<String, Object> getAdditionalProperties() {
     return this.additionalProperties;
   }
 
   @JsonAnySetter
-  public void setAdditionalProperty(String name, Object value)
-  {
+  public void setAdditionalProperty(String name, Object value) {
     this.additionalProperties.put(name, value);
   }
 

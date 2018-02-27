@@ -22,8 +22,7 @@ import java.util.Map;
     "Id",
     "stevci_lokacijaOpis"
 })
-public class Item
-{
+public class Item {
   @JsonProperty("y_wgs")
   private Double yWgs;
   @JsonProperty("Description")
@@ -54,170 +53,142 @@ public class Item
   private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
   @JsonProperty("y_wgs")
-  public Double getYWgs()
-  {
+  public Double getYWgs() {
     return yWgs;
   }
 
   @JsonProperty("y_wgs")
-  public void setYWgs(Double yWgs)
-  {
+  public void setYWgs(Double yWgs) {
     this.yWgs = yWgs;
   }
 
   @JsonProperty("Description")
-  public String getDescription()
-  {
+  public String getDescription() {
     return description;
   }
 
   @JsonProperty("Description")
-  public void setDescription(String description)
-  {
+  public void setDescription(String description) {
     this.description = description;
   }
 
   @JsonProperty("Title")
-  public String getTitle()
-  {
+  public String getTitle() {
     return title;
   }
 
   @JsonProperty("Title")
-  public void setTitle(String title)
-  {
+  public void setTitle(String title) {
     this.title = title;
   }
 
   @JsonProperty("ContentName")
-  public String getContentName()
-  {
+  public String getContentName() {
     return contentName;
   }
 
   @JsonProperty("ContentName")
-  public void setContentName(String contentName)
-  {
+  public void setContentName(String contentName) {
     this.contentName = contentName;
   }
 
   @JsonProperty("x_wgs")
-  public Double getXWgs()
-  {
+  public Double getXWgs() {
     return xWgs;
   }
 
   @JsonProperty("x_wgs")
-  public void setXWgs(Double xWgs)
-  {
+  public void setXWgs(Double xWgs) {
     this.xWgs = xWgs;
   }
 
   @JsonProperty("CrsId")
-  public String getCrsId()
-  {
+  public String getCrsId() {
     return crsId;
   }
 
   @JsonProperty("CrsId")
-  public void setCrsId(String crsId)
-  {
+  public void setCrsId(String crsId) {
     this.crsId = crsId;
   }
 
   @JsonProperty("stevci_cestaOpis")
-  public String getStevciCestaOpis()
-  {
+  public String getStevciCestaOpis() {
     return stevciCestaOpis;
   }
 
   @JsonProperty("stevci_cestaOpis")
-  public void setStevciCestaOpis(String stevciCestaOpis)
-  {
+  public void setStevciCestaOpis(String stevciCestaOpis) {
     this.stevciCestaOpis = stevciCestaOpis;
   }
 
   @JsonProperty("Y")
-  public Double getY()
-  {
+  public Double getY() {
     return y;
   }
 
   @JsonProperty("Y")
-  public void setY(Double y)
-  {
+  public void setY(Double y) {
     this.y = y;
   }
 
   @JsonProperty("X")
-  public Double getX()
-  {
+  public Double getX() {
     return x;
   }
 
   @JsonProperty("X")
-  public void setX(Double x)
-  {
+  public void setX(Double x) {
     this.x = x;
   }
 
   @JsonProperty("Icon")
-  public String getIcon()
-  {
+  public String getIcon() {
     return icon;
   }
 
   @JsonProperty("Icon")
-  public void setIcon(String icon)
-  {
+  public void setIcon(String icon) {
     this.icon = icon;
   }
 
   @JsonProperty("Data")
-  public List<Datum> getData()
-  {
+  public List<Datum> getData() {
     return data;
   }
 
   @JsonProperty("Data")
-  public void setData(List<Datum> data)
-  {
+  public void setData(List<Datum> data) {
     this.data = data;
   }
 
   @JsonProperty("Id")
-  public String getId()
-  {
+  public String getId() {
     return id;
   }
 
   @JsonProperty("Id")
-  public void setId(String id)
-  {
+  public void setId(String id) {
     this.id = id;
   }
 
   @JsonProperty("stevci_lokacijaOpis")
-  public String getStevciLokacijaOpis()
-  {
+  public String getStevciLokacijaOpis() {
     return stevciLokacijaOpis;
   }
 
   @JsonProperty("stevci_lokacijaOpis")
-  public void setStevciLokacijaOpis(String stevciLokacijaOpis)
-  {
+  public void setStevciLokacijaOpis(String stevciLokacijaOpis) {
     this.stevciLokacijaOpis = stevciLokacijaOpis;
   }
 
   @JsonAnyGetter
-  public Map<String, Object> getAdditionalProperties()
-  {
+  public Map<String, Object> getAdditionalProperties() {
     return this.additionalProperties;
   }
 
   @JsonAnySetter
-  public void setAdditionalProperty(String name, Object value)
-  {
+  public void setAdditionalProperty(String name, Object value) {
     this.additionalProperties.put(name, value);
   }
 

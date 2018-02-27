@@ -22,8 +22,7 @@ import java.util.stream.Collectors;
  * @author bratwurzt
  */
 @Component
-public class CounterSaver
-{
+public class CounterSaver {
   private static final Logger LOG = LoggerFactory.getLogger(CounterSaver.class);
   private volatile DateTime lastModified = null;
 
@@ -36,8 +35,7 @@ public class CounterSaver
       CountersClient countersClient,
       CacheCounterRepository cacheCounterRepository,
       CounterTimelineRepository counterTimelineRepository,
-      CounterTimelineExtendedRepositoryImpl counterTimelineExtendedRepository)
-  {
+      CounterTimelineExtendedRepositoryImpl counterTimelineExtendedRepository) {
     lastModified = counterTimelineExtendedRepository.findLastModified();
     this.countersClient = countersClient;
     this.cacheCounterRepository = cacheCounterRepository;
@@ -46,15 +44,12 @@ public class CounterSaver
 
   @Async
   @Scheduled(fixedRateString = "${saver.counter.scheduledMillis}")
-  public void saveCounters()
-  {
+  public void saveCounters() {
     final Counter counters = countersClient.getCounters();
     final Content content = counters.getContents().iterator().next();
     final DateTime modifiedTime = content.getModifiedTime();
-    try
-    {
-      if (!modifiedTime.equals(lastModified))
-      {
+    try {
+      if (!modifiedTime.equals(lastModified)) {
         Long lastChange = System.currentTimeMillis();
         final List<CounterTimeline> counterTimelines = content.getData().getItems().stream()
             .flatMap(it -> it.getData().stream()
@@ -72,29 +67,23 @@ public class CounterSaver
                 )))
             .collect(Collectors.toList());
 
-        counterTimelineRepository.save(counterTimelines);
+        counterTimelineRepository.saveAll(counterTimelines);
         lastModified = modifiedTime;
         long millis = System.currentTimeMillis() - lastChange;
 
         LOG.debug("Saved " + counterTimelines.size() + " counters in " + millis / 1000 + "s");
       }
-    }
-    catch (Exception e)
-    {
+    } catch (Exception e) {
       LOG.error("Error: ", e);
     }
   }
 
 
-  private float getAvgSecGap(final String stevciGap)
-  {
+  private float getAvgSecGap(final String stevciGap) {
     float avgSecGap = 999;
-    try
-    {
+    try {
       avgSecGap = Float.valueOf(stevciGap.replace(",", "."));
-    }
-    catch (NumberFormatException ignored)
-    {
+    } catch (NumberFormatException ignored) {
     }
     return avgSecGap;
   }

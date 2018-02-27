@@ -12,19 +12,15 @@ import java.math.BigInteger;
 /**
  * @author bratwurzt
  */
-public class JodaDateUnixTimeDeserializer extends StdScalarDeserializer<DateTime>
-{
-  protected JodaDateUnixTimeDeserializer()
-  {
+public class JodaDateUnixTimeDeserializer extends StdScalarDeserializer<DateTime> {
+  protected JodaDateUnixTimeDeserializer() {
     super(DateTime.class);
   }
 
   @Override
-  public DateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException
-  {
+  public DateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
     JsonToken currentToken = jsonParser.getCurrentToken();
-    if (currentToken == JsonToken.VALUE_NUMBER_INT)
-    {
+    if (currentToken == JsonToken.VALUE_NUMBER_INT) {
       BigInteger unixTimeAsString = jsonParser.getBigIntegerValue();
       return new DateTime(unixTimeAsString.longValue() * 1000);
     }

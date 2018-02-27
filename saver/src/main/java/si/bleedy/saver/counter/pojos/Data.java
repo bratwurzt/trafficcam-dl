@@ -12,8 +12,7 @@ import java.util.Map;
     "Language",
     "Items"
 })
-public class Data
-{
+public class Data {
   @JsonProperty("ContentName")
   private String contentName;
   @JsonProperty("Language")
@@ -24,50 +23,42 @@ public class Data
   private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
   @JsonProperty("ContentName")
-  public String getContentName()
-  {
+  public String getContentName() {
     return contentName;
   }
 
   @JsonProperty("ContentName")
-  public void setContentName(String contentName)
-  {
+  public void setContentName(String contentName) {
     this.contentName = contentName;
   }
 
   @JsonProperty("Language")
-  public String getLanguage()
-  {
+  public String getLanguage() {
     return language;
   }
 
   @JsonProperty("Language")
-  public void setLanguage(String language)
-  {
+  public void setLanguage(String language) {
     this.language = language;
   }
 
   @JsonProperty("Items")
-  public List<Item> getItems()
-  {
+  public List<Item> getItems() {
     return items;
   }
 
   @JsonProperty("Items")
-  public void setItems(List<Item> items)
-  {
+  public void setItems(List<Item> items) {
     this.items = items;
   }
 
   @JsonAnyGetter
-  public Map<String, Object> getAdditionalProperties()
-  {
+  public Map<String, Object> getAdditionalProperties() {
     return this.additionalProperties;
   }
 
   @JsonAnySetter
-  public void setAdditionalProperty(String name, Object value)
-  {
+  public void setAdditionalProperty(String name, Object value) {
     this.additionalProperties.put(name, value);
   }
 

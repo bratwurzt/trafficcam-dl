@@ -7,7 +7,6 @@ import java.util.Map;
 /**
  * @author bratwurzt
  */
-public interface TimelineExtendedRepository
-{
+public interface TimelineExtendedRepository {
   Map<String, DateTime> findLastModified();
 }

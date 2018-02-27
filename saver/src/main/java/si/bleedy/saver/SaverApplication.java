@@ -8,10 +8,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableAsync
 @EnableScheduling
 @SpringBootApplication
-public class SaverApplication
-{
-  public static void main(String[] args)
-  {
+public class SaverApplication {
+  public static void main(String[] args) {
     SpringApplication.run(SaverApplication.class, args);
   }
 }

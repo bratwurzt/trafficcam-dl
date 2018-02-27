@@ -9,17 +9,14 @@ import si.bleedy.saver.counter.pojos.Counter;
  * Created by bm on 3.05.2017.
  */
 @Service
-public class CountersClient
-{
+public class CountersClient {
   private final RestTemplate restTemplate;
 
-  public CountersClient(RestTemplateBuilder restTemplateBuilder)
-  {
+  public CountersClient(RestTemplateBuilder restTemplateBuilder) {
     this.restTemplate = restTemplateBuilder.build();
   }
 
-  public Counter getCounters()
-  {
+  public Counter getCounters() {
     return this.restTemplate.getForObject("http://opendata.si/promet/counters/", Counter.class);
   }
 }

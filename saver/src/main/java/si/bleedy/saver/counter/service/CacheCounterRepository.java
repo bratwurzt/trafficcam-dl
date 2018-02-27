@@ -15,38 +15,33 @@ import java.util.stream.StreamSupport;
  * @author bratwurzt
  */
 @Service
-public class CacheCounterRepository
-{
+public class CacheCounterRepository {
   private final Map<String, CounterData> COUNTER_MAP;
   private final CounterRepository counterRepository;
 
   @Autowired
-  public CacheCounterRepository(CounterRepository counterRepository)
-  {
+  public CacheCounterRepository(CounterRepository counterRepository) {
     this.counterRepository = counterRepository;
     COUNTER_MAP = StreamSupport.stream(this.counterRepository.findAll().spliterator(), false)
-            .collect(Collectors.toConcurrentMap(CounterData::getCode, Function.identity()));;
+        .collect(Collectors.toConcurrentMap(CounterData::getCode, Function.identity()));
+    ;
   }
 
   @Transactional
-  public CounterData get(String code, double xCoordinates, double yCoordinates, String stevciSmerOpis, String stevciPasOpis)
-  {
+  public CounterData get(String code, double xCoordinates, double yCoordinates, String stevciSmerOpis, String stevciPasOpis) {
     CounterData counter = COUNTER_MAP.get(code);
-    if (counter == null)
-    {
+    if (counter == null) {
       final String pasOpis = stevciSmerOpis + (stevciPasOpis != null ? " " + stevciPasOpis : "");
       counterRepository.save(code, xCoordinates, yCoordinates, pasOpis);
       counter = counterRepository.findByCode(code);
-      if (counter != null)
-      {
+      if (counter != null) {
         COUNTER_MAP.put(code, counter);
       }
     }
     return counter;
   }
 
-  public Collection<CounterData> findAll()
-  {
+  public Collection<CounterData> findAll() {
     return COUNTER_MAP.values();
   }
 

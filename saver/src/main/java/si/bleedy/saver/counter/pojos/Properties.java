@@ -17,8 +17,7 @@ import java.util.Map;
     "stevci_smerOpis",
     "stevci_stat"
 })
-public class Properties
-{
+public class Properties {
   @JsonProperty("stevci_gap")
   private String stevciGap;
   @JsonProperty("stevci_statOpis")
@@ -37,100 +36,84 @@ public class Properties
   private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
   @JsonProperty("stevci_gap")
-  public String getStevciGap()
-  {
+  public String getStevciGap() {
     return stevciGap;
   }
 
   @JsonProperty("stevci_gap")
-  public void setStevciGap(String stevciGap)
-  {
+  public void setStevciGap(String stevciGap) {
     this.stevciGap = stevciGap;
   }
 
   @JsonProperty("stevci_statOpis")
-  public String getStevciStatOpis()
-  {
+  public String getStevciStatOpis() {
     return stevciStatOpis;
   }
 
   @JsonProperty("stevci_statOpis")
-  public void setStevciStatOpis(String stevciStatOpis)
-  {
+  public void setStevciStatOpis(String stevciStatOpis) {
     this.stevciStatOpis = stevciStatOpis;
   }
 
   @JsonProperty("stevci_hit")
   @JsonDeserialize(using = IntegerDeserializer.class)
-  public Integer getStevciHit()
-  {
+  public Integer getStevciHit() {
     return stevciHit;
   }
 
   @JsonProperty("stevci_hit")
-  public void setStevciHit(Integer stevciHit)
-  {
+  public void setStevciHit(Integer stevciHit) {
     this.stevciHit = stevciHit;
   }
 
   @JsonProperty("stevci_stev")
   @JsonDeserialize(using = IntegerDeserializer.class)
-  public Integer getStevciStev()
-  {
+  public Integer getStevciStev() {
     return stevciStev;
   }
 
   @JsonProperty("stevci_stev")
-  public void setStevciStev(Integer stevciStev)
-  {
+  public void setStevciStev(Integer stevciStev) {
     this.stevciStev = stevciStev;
   }
 
   @JsonProperty("stevci_pasOpis")
-  public String getStevciPasOpis()
-  {
+  public String getStevciPasOpis() {
     return stevciPasOpis;
   }
 
   @JsonProperty("stevci_pasOpis")
-  public void setStevciPasOpis(String stevciPasOpis)
-  {
+  public void setStevciPasOpis(String stevciPasOpis) {
     this.stevciPasOpis = stevciPasOpis;
   }
 
   @JsonProperty("stevci_smerOpis")
-  public String getStevciSmerOpis()
-  {
+  public String getStevciSmerOpis() {
     return stevciSmerOpis;
   }
 
   @JsonProperty("stevci_smerOpis")
-  public void setStevciSmerOpis(String stevciSmerOpis)
-  {
+  public void setStevciSmerOpis(String stevciSmerOpis) {
     this.stevciSmerOpis = stevciSmerOpis;
   }
 
   @JsonProperty("stevci_stat")
-  public String getStevciStat()
-  {
+  public String getStevciStat() {
     return stevciStat;
   }
 
   @JsonProperty("stevci_stat")
-  public void setStevciStat(String stevciStat)
-  {
+  public void setStevciStat(String stevciStat) {
     this.stevciStat = stevciStat;
   }
 
   @JsonAnyGetter
-  public Map<String, Object> getAdditionalProperties()
-  {
+  public Map<String, Object> getAdditionalProperties() {
     return this.additionalProperties;
   }
 
   @JsonAnySetter
-  public void setAdditionalProperty(String name, Object value)
-  {
+  public void setAdditionalProperty(String name, Object value) {
     this.additionalProperties.put(name, value);
   }
 

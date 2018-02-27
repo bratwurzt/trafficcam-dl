@@ -20,8 +20,7 @@ import java.util.Map;
     "Expires",
     "Contents"
 })
-public class Counter
-{
+public class Counter {
   @JsonProperty("RoutingVersion")
   private Integer routingVersion;
   @JsonProperty("updated")
@@ -42,112 +41,94 @@ public class Counter
   private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
   @JsonProperty("RoutingVersion")
-  public Integer getRoutingVersion()
-  {
+  public Integer getRoutingVersion() {
     return routingVersion;
   }
 
   @JsonProperty("RoutingVersion")
-  public void setRoutingVersion(Integer routingVersion)
-  {
+  public void setRoutingVersion(Integer routingVersion) {
     this.routingVersion = routingVersion;
   }
 
   @JsonProperty("updated")
-  public Integer getUpdated()
-  {
+  public Integer getUpdated() {
     return updated;
   }
 
   @JsonProperty("updated")
-  public void setUpdated(Integer updated)
-  {
+  public void setUpdated(Integer updated) {
     this.updated = updated;
   }
 
   @JsonProperty("TileVersion")
-  public Integer getTileVersion()
-  {
+  public Integer getTileVersion() {
     return tileVersion;
   }
 
   @JsonProperty("TileVersion")
-  public void setTileVersion(Integer tileVersion)
-  {
+  public void setTileVersion(Integer tileVersion) {
     this.tileVersion = tileVersion;
   }
 
   @JsonProperty("ModifiedTime")
   @JsonDeserialize(using = JodaDateDeserializer.class)
-  public DateTime getModifiedTime()
-  {
+  public DateTime getModifiedTime() {
     return modifiedTime;
   }
 
   @JsonProperty("ModifiedTime")
-  public void setModifiedTime(DateTime modifiedTime)
-  {
+  public void setModifiedTime(DateTime modifiedTime) {
     this.modifiedTime = modifiedTime;
   }
 
   @JsonProperty("copyright")
-  public String getCopyright()
-  {
+  public String getCopyright() {
     return copyright;
   }
 
   @JsonProperty("copyright")
-  public void setCopyright(String copyright)
-  {
+  public void setCopyright(String copyright) {
     this.copyright = copyright;
   }
 
   @JsonProperty("ModelVersion")
-  public Integer getModelVersion()
-  {
+  public Integer getModelVersion() {
     return modelVersion;
   }
 
   @JsonProperty("ModelVersion")
-  public void setModelVersion(Integer modelVersion)
-  {
+  public void setModelVersion(Integer modelVersion) {
     this.modelVersion = modelVersion;
   }
 
   @JsonProperty("Expires")
   @JsonDeserialize(using = JodaDateDeserializer.class)
-  public DateTime getExpires()
-  {
+  public DateTime getExpires() {
     return expires;
   }
 
   @JsonProperty("Expires")
-  public void setExpires(DateTime expires)
-  {
+  public void setExpires(DateTime expires) {
     this.expires = expires;
   }
 
   @JsonProperty("Contents")
-  public List<Content> getContents()
-  {
+  public List<Content> getContents() {
     return contents;
   }
 
   @JsonProperty("Contents")
-  public void setContents(List<Content> contents)
-  {
+  public void setContents(List<Content> contents) {
     this.contents = contents;
   }
 
   @JsonAnyGetter
-  public Map<String, Object> getAdditionalProperties()
-  {
+  public Map<String, Object> getAdditionalProperties() {
     return this.additionalProperties;
   }
 
   @JsonAnySetter
-  public void setAdditionalProperty(String name, Object value)
-  {
+  public void setAdditionalProperty(String name, Object value) {
     this.additionalProperties.put(name, value);
   }
 

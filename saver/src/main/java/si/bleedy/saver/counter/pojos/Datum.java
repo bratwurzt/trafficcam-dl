@@ -11,8 +11,7 @@ import java.util.Map;
     "Id",
     "Icon"
 })
-public class Datum
-{
+public class Datum {
   @JsonProperty("properties")
   private Properties properties;
   @JsonProperty("Id")
@@ -23,50 +22,42 @@ public class Datum
   private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
   @JsonProperty("properties")
-  public Properties getProperties()
-  {
+  public Properties getProperties() {
     return properties;
   }
 
   @JsonProperty("properties")
-  public void setProperties(Properties properties)
-  {
+  public void setProperties(Properties properties) {
     this.properties = properties;
   }
 
   @JsonProperty("Id")
-  public String getId()
-  {
+  public String getId() {
     return id;
   }
 
   @JsonProperty("Id")
-  public void setId(String id)
-  {
+  public void setId(String id) {
     this.id = id;
   }
 
   @JsonProperty("Icon")
-  public String getIcon()
-  {
+  public String getIcon() {
     return icon;
   }
 
   @JsonProperty("Icon")
-  public void setIcon(String icon)
-  {
+  public void setIcon(String icon) {
     this.icon = icon;
   }
 
   @JsonAnyGetter
-  public Map<String, Object> getAdditionalProperties()
-  {
+  public Map<String, Object> getAdditionalProperties() {
     return this.additionalProperties;
   }
 
   @JsonAnySetter
-  public void setAdditionalProperty(String name, Object value)
-  {
+  public void setAdditionalProperty(String name, Object value) {
     this.additionalProperties.put(name, value);
   }
 

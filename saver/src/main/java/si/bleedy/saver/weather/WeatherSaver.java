@@ -24,8 +24,7 @@ import java.util.stream.Collectors;
  * @author bratwurzt
  */
 @Component
-public class WeatherSaver
-{
+public class WeatherSaver {
   private static final Logger LOG = LoggerFactory.getLogger(WeatherSaver.class);
   private final Map<String, DateTime> lastModified;
 
@@ -41,8 +40,7 @@ public class WeatherSaver
       WeatherTimelineRepository weatherTimelineRepository,
       WeatherTimelineExtendedRepository timelineExtendedRepository,
       CacheCounterRepository cacheCounterRepository,
-      @Value("${saver.weather.sleepMillis}") Integer sleepMillis)
-  {
+      @Value("${saver.weather.sleepMillis}") Integer sleepMillis) {
     lastModified = timelineExtendedRepository.findLastModified();
     this.weatherClient = weatherClient;
     this.weatherTimelineRepository = weatherTimelineRepository;
@@ -52,21 +50,17 @@ public class WeatherSaver
 
   @Async
   @Scheduled(fixedRateString = "${saver.weather.scheduledMillis}")
-  public void saveWeatherData()
-  {
-    try
-    {
+  public void saveWeatherData() {
+    try {
       Long lastChange = System.currentTimeMillis();
       List<CounterData> counterDataList = cacheCounterRepository.findAll().stream()
           .filter(c -> c.getLat() > 45.21 && c.getLat() < 47.05)
           .filter(c -> c.getLon() > 12.92 && c.getLon() < 16.71)
           .collect(Collectors.toList());
       int i = 0;
-      for (CounterData c : counterDataList)
-      {
+      for (CounterData c : counterDataList) {
         WeatherDto w = weatherClient.getWeatherData(c.getLon(), c.getLat());
-        if (w != null && "ok".equals(w.getStatus()) && !w.getRadar().getUpdated().equals(lastModified.get(c.getCode())))
-        {
+        if (w != null && "ok".equals(w.getStatus()) && !w.getRadar().getUpdated().equals(lastModified.get(c.getCode()))) {
           weatherTimelineRepository.save(
               new WeatherTimeline(
                   w.getRadar().getUpdated(),
@@ -76,24 +70,18 @@ public class WeatherSaver
               ));
           lastModified.put(c.getCode(), w.getRadar().getUpdated());
           i++;
-          try
-          {
+          try {
             Thread.sleep(sleepMillis);
-          }
-          catch (InterruptedException ignored)
-          {
+          } catch (InterruptedException ignored) {
           }
         }
       }
 
       long millis = System.currentTimeMillis() - lastChange;
-      if (i > 0)
-      {
+      if (i > 0) {
         LOG.debug("Saved " + i + " of weather data in " + millis / 1000 + "s");
       }
-    }
-    catch (Exception e)
-    {
+    } catch (Exception e) {
       LOG.error("Error: ", e);
     }
   }

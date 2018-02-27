@@ -9,63 +9,52 @@ import javax.persistence.*;
  */
 @Entity
 @Table(name = "counter")
-public class CounterData
-{
+public class CounterData {
   private long id;
   private String code;
   private Point location;
 
-  public CounterData()
-  {
+  public CounterData() {
   }
 
-  public CounterData(long id, String code, float lon, float lat)
-  {
+  public CounterData(long id, String code, float lon, float lat) {
     this.id = id;
     this.code = code;
   }
 
   @Id
-  public long getId()
-  {
+  public long getId() {
     return id;
   }
 
-  public void setId(long id)
-  {
+  public void setId(long id) {
     this.id = id;
   }
 
-  public String getCode()
-  {
+  public String getCode() {
     return code;
   }
 
-  public void setCode(String code)
-  {
+  public void setCode(String code) {
     this.code = code;
   }
 
   @Transient
-  public Float getLon()
-  {
-    return (float)location.getX();
+  public Float getLon() {
+    return (float) location.getX();
   }
 
   @Transient
-  public Float getLat()
-  {
-    return (float)location.getY();
+  public Float getLat() {
+    return (float) location.getY();
   }
 
   @Column(columnDefinition = "geometry(Point,4326)")
-  public Point getLocation()
-  {
+  public Point getLocation() {
     return location;
   }
 
-  public void setLocation(Point location)
-  {
+  public void setLocation(Point location) {
     this.location = location;
   }
 }

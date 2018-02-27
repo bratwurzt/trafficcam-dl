@@ -4,6 +4,7 @@ import org.joda.time.DateTime;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,18 +20,14 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * @author bratwurzt
  */
 @Component
-public class CarTowSaver
-{
+public class CarTowSaver {
   private static final Logger LOG = LoggerFactory.getLogger(CarTowSaver.class);
   private DateFormat dateFormatter = new SimpleDateFormat("dd.MM.yyyy H:mm:ss");
   private DateFormat dayDateFormatter = new SimpleDateFormat("dd.MM.yyyy");
@@ -45,66 +42,59 @@ public class CarTowSaver
   public CarTowSaver(
       TowTimelineCrudRepository towTimelineCrudRepository,
       CarRepository carRepository,
-      StreetRepository streetRepository)
-  {
+      StreetRepository streetRepository) {
     this.towTimelineCrudRepository = towTimelineCrudRepository;
     this.carRepository = carRepository;
     this.streetRepository = streetRepository;
   }
 
   @Async
-  @Scheduled(fixedRateString = "${saver.tow.scheduledMillis:300000}")
-  public void saveCarTows()
-  {
+  @Scheduled(fixedRateString = "${saver.tow.scheduledMillis:3600000}")
+  public void saveCarTows() {
     int retries = 0;
-    try
-    {
-      while (retries++ < 5)
-      {
-        try
-        {
+    try {
+      while (retries++ < 5) {
+        try {
           Connection connect = Jsoup.connect("http://www.lpt.si/parkirisca_pajki/parkirisca/zapuscena_vozila");
-          if (connect == null)
-          {
+          if (connect == null) {
             continue;
           }
           Document doc = connect.get();
-          if (doc == null)
-          {
+          if (doc == null) {
             continue;
           }
-          String modifiedString = doc.select("div[class=title_1_bg head_bg rightside]").first().text();
+          String cssQuery = "div[class=title_1_bg head_bg rightside]";
+          Elements elements = doc.select(cssQuery);
+          if (elements == null || elements.isEmpty()) {
+            LOG.error("Error, retry " + retries + ": No element for '" + cssQuery + "' found in " + doc.toString());
+            continue;
+          }
+          String modifiedString = elements.first().text();
           DateTime modified = new DateTime(dateFormatter.parse(modifiedString.substring("Zadnja posodobitev: ".length())).getTime());
-          if (!modified.equals(lastModified))
-          {
+          if (!modified.equals(lastModified)) {
             Long lastChange = System.currentTimeMillis();
             DateTime created = new DateTime();
             Set<TowTimeline> towTimelines = doc.select("tr[class^=table_list]").stream()
                 .map(el -> {
-                  try
-                  {
+                  try {
                     return new TowTimeline(
-                        carRepository.findOne(carRepository.save(
+                        carRepository.findById(carRepository.save(
                             el.select("td").get(0).text(),
                             el.select("td").get(1).text(),
                             el.select("td").get(2).text())),
-                        streetRepository.findOne(streetRepository.save(el.select("td").get(3).text())),
+                        streetRepository.findById(streetRepository.save(el.select("td").get(3).text())),
                         new DateTime(dayDateFormatter.parse(el.select("td").get(4).text()).getTime()),
                         created
                     );
-                  }
-                  catch (ParseException e)
-                  {
+                  } catch (NoSuchElementException | ParseException e) {
                     throw new RuntimeException(e);
                   }
                 })
                 .collect(Collectors.toSet());
 
-            if (!towTimelines.isEmpty())
-            {
+            if (!towTimelines.isEmpty()) {
               long savedCount = 0, updatedCount = 0;
-              if (TOW_TIMELINES.isEmpty())
-              {
+              if (TOW_TIMELINES.isEmpty()) {
                 TOW_TIMELINES.addAll(towTimelines);
                 Set<TowTimeline> filteredTowTimelines = TOW_TIMELINES.stream()
                     .filter(tt -> towTimelineCrudRepository.find(
@@ -114,30 +104,22 @@ public class CarTowSaver
                         tt.getStreet().getName(),
                         tt.getDayTowed()) == null)
                     .collect(Collectors.toSet());
-                if (!filteredTowTimelines.isEmpty())
-                {
-                  Iterable<TowTimeline> savedTowTimelines = towTimelineCrudRepository.save(filteredTowTimelines);
+                if (!filteredTowTimelines.isEmpty()) {
+                  Iterable<TowTimeline> savedTowTimelines = towTimelineCrudRepository.saveAll(filteredTowTimelines);
                   savedCount = savedTowTimelines.spliterator().getExactSizeIfKnown();
                 }
-              }
-              else
-              {
+              } else {
                 Set<TowTimeline> intersection = intersection(TOW_TIMELINES, towTimelines);
-                if (!intersection.isEmpty())
-                {
-                  try
-                  {
+                if (!intersection.isEmpty()) {
+                  try {
                     Set<TowTimeline> changesOnOldSet = difference(TOW_TIMELINES, intersection);
                     updatedCount += changesOnOldSet.stream()
                         .map(towTimeline -> {
                           towTimeline.setTimePickedUp(modified);
                           TowTimeline save = null;
-                          try
-                          {
+                          try {
                             save = towTimelineCrudRepository.save(towTimeline);
-                          }
-                          catch (Exception e)
-                          {
+                          } catch (Exception e) {
                             LOG.error("Error while saving towTimeline", e);
                           }
                           return save;
@@ -154,57 +136,46 @@ public class CarTowSaver
                             tt.getDayTowed()) == null)
                         .map(towTimelineCrudRepository::save)
                         .count();
-                  }
-                  finally
-                  {
+                  } finally {
                     TOW_TIMELINES.clear();
                     TOW_TIMELINES.addAll(towTimelines);
                   }
                 }
               }
               long millis = System.currentTimeMillis() - lastChange;
-              if (savedCount > 0)
-              {
+              if (savedCount > 0) {
                 LOG.debug("Saved " + savedCount + " of car tow data in " + millis / 1000 + "s");
               }
-              if (updatedCount > 0)
-              {
+              if (updatedCount > 0) {
                 LOG.debug("Updated " + updatedCount + " of car tow data in " + millis / 1000 + "s");
               }
 
             }
             lastModified = modified;
           }
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
           LOG.error("Error, retry " + retries, e);
-          Thread.sleep(5000);
         }
       }
-    }
-    catch (ParseException | InterruptedException e)
-    {
+      Thread.sleep(30000);
+    } catch (ParseException | InterruptedException e) {
       LOG.error("Error: ", e);
     }
   }
 
-  public <T> Set<T> union(Set<T> setA, Set<T> setB)
-  {
+  public <T> Set<T> union(Set<T> setA, Set<T> setB) {
     Set<T> tmp = new TreeSet<T>(setA);
     tmp.addAll(setB);
     return tmp;
   }
 
-  private <T> Set<T> intersection(Set<T> setA, Set<T> setB)
-  {
+  private <T> Set<T> intersection(Set<T> setA, Set<T> setB) {
     Set<T> tmp = new TreeSet<T>(setA);
     tmp.retainAll(setB);
     return tmp;
   }
 
-  private <T> Set<T> difference(Set<T> setA, Set<T> setB)
-  {
+  private <T> Set<T> difference(Set<T> setA, Set<T> setB) {
     Set<T> tmp = new TreeSet<T>(setA);
     tmp.removeAll(setB);
     return tmp;
