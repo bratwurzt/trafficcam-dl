@@ -20,7 +20,7 @@ public class IntegerDeserializer extends StdScalarDeserializer<Integer> {
     JsonToken currentToken = jsonParser.getCurrentToken();
     if (currentToken == JsonToken.VALUE_STRING) {
       String dateTimeAsString = jsonParser.getText().trim();
-      return Integer.parseInt(dateTimeAsString);
+      return Integer.parseInt(dateTimeAsString.replace(',', '.'));
     }
     return (Integer) deserializationContext.handleUnexpectedToken(getValueClass(), jsonParser);
   }

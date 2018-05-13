@@ -1,8 +1,6 @@
 package si.bleedy.saver.tow;
 
 import org.joda.time.DateTime;
-import org.jsoup.Connection;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
@@ -11,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import si.bleedy.saver.service.JsoupDao;
 import si.bleedy.saver.tow.data.TowTimeline;
 import si.bleedy.saver.tow.service.CarRepository;
 import si.bleedy.saver.tow.service.StreetRepository;
@@ -32,20 +31,24 @@ public class CarTowSaver {
   private DateFormat dateFormatter = new SimpleDateFormat("dd.MM.yyyy H:mm:ss");
   private DateFormat dayDateFormatter = new SimpleDateFormat("dd.MM.yyyy");
   private DateTime lastModified = null;
+  private Document previousDoc;
   private final Set<TowTimeline> TOW_TIMELINES = new HashSet<>();
 
   private final TowTimelineCrudRepository towTimelineCrudRepository;
   private final CarRepository carRepository;
   private final StreetRepository streetRepository;
+  private final JsoupDao jsoupDao;
 
   @Autowired
   public CarTowSaver(
       TowTimelineCrudRepository towTimelineCrudRepository,
       CarRepository carRepository,
-      StreetRepository streetRepository) {
+      StreetRepository streetRepository,
+      JsoupDao jsoupDao) {
     this.towTimelineCrudRepository = towTimelineCrudRepository;
     this.carRepository = carRepository;
     this.streetRepository = streetRepository;
+    this.jsoupDao = jsoupDao;
   }
 
   @Async
@@ -55,14 +58,8 @@ public class CarTowSaver {
     try {
       while (retries++ < 5) {
         try {
-          Connection connect = Jsoup.connect("http://www.lpt.si/parkirisca_pajki/parkirisca/zapuscena_vozila");
-          if (connect == null) {
-            continue;
-          }
-          Document doc = connect.get();
-          if (doc == null) {
-            continue;
-          }
+          Document doc = jsoupDao.downloadDoc();
+          if (doc == null) continue;
           String cssQuery = "div[class=title_1_bg head_bg rightside]";
           Elements elements = doc.select(cssQuery);
           if (elements == null || elements.isEmpty()) {
@@ -152,6 +149,7 @@ public class CarTowSaver {
 
             }
             lastModified = modified;
+            previousDoc = doc;
           }
         } catch (IOException e) {
           LOG.error("Error, retry " + retries, e);
@@ -162,6 +160,7 @@ public class CarTowSaver {
       LOG.error("Error: ", e);
     }
   }
+
 
   public <T> Set<T> union(Set<T> setA, Set<T> setB) {
     Set<T> tmp = new TreeSet<T>(setA);
