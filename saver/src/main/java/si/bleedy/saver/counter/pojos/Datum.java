@@ -12,6 +12,7 @@ import java.util.Map;
     "Icon"
 })
 public class Datum {
+
   @JsonProperty("properties")
   private Properties properties;
   @JsonProperty("Id")

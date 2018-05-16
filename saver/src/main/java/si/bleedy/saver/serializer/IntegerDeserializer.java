@@ -19,9 +19,9 @@ public class IntegerDeserializer extends StdScalarDeserializer<Integer> {
   public Integer deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
     JsonToken currentToken = jsonParser.getCurrentToken();
     if (currentToken == JsonToken.VALUE_STRING) {
-      String dateTimeAsString = jsonParser.getText().trim();
-      return Integer.parseInt(dateTimeAsString.replace(',', '.'));
+      String trimmed = jsonParser.getText().trim();
+      return Integer.parseInt(trimmed.contains(",") ? trimmed.substring(0, trimmed.indexOf(',')) : trimmed);
     }
-    return (Integer) deserializationContext.handleUnexpectedToken(getValueClass(), jsonParser);
+    return (Integer) deserializationContext.handleUnexpectedToken(handledType(), jsonParser);
   }
 }

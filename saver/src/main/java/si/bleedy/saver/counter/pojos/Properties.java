@@ -9,8 +9,8 @@ import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-    "stevci_gap",
     "stevci_statOpis",
+    "stevci_gap",
     "stevci_hit",
     "stevci_stev",
     "stevci_pasOpis",
@@ -18,10 +18,11 @@ import java.util.Map;
     "stevci_stat"
 })
 public class Properties {
-  @JsonProperty("stevci_gap")
-  private String stevciGap;
+
   @JsonProperty("stevci_statOpis")
   private String stevciStatOpis;
+  @JsonProperty("stevci_gap")
+  private String stevciGap;
   @JsonProperty("stevci_hit")
   private Integer stevciHit;
   @JsonProperty("stevci_stev")
@@ -35,16 +36,6 @@ public class Properties {
   @JsonIgnore
   private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-  @JsonProperty("stevci_gap")
-  public String getStevciGap() {
-    return stevciGap;
-  }
-
-  @JsonProperty("stevci_gap")
-  public void setStevciGap(String stevciGap) {
-    this.stevciGap = stevciGap;
-  }
-
   @JsonProperty("stevci_statOpis")
   public String getStevciStatOpis() {
     return stevciStatOpis;
@@ -53,6 +44,16 @@ public class Properties {
   @JsonProperty("stevci_statOpis")
   public void setStevciStatOpis(String stevciStatOpis) {
     this.stevciStatOpis = stevciStatOpis;
+  }
+
+  @JsonProperty("stevci_gap")
+  public String getStevciGap() {
+    return stevciGap;
+  }
+
+  @JsonProperty("stevci_gap")
+  public void setStevciGap(String stevciGap) {
+    this.stevciGap = stevciGap;
   }
 
   @JsonProperty("stevci_hit")

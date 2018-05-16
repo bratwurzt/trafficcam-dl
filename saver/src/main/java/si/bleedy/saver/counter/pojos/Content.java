@@ -10,8 +10,8 @@ import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-    "Language",
     "ModifiedTime",
+    "Language",
     "IsModified",
     "ContentName",
     "Expires",
@@ -19,10 +19,11 @@ import java.util.Map;
     "Data"
 })
 public class Content {
-  @JsonProperty("Language")
-  private String language;
+
   @JsonProperty("ModifiedTime")
   private DateTime modifiedTime;
+  @JsonProperty("Language")
+  private String language;
   @JsonProperty("IsModified")
   private Boolean isModified;
   @JsonProperty("ContentName")
@@ -36,16 +37,6 @@ public class Content {
   @JsonIgnore
   private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-  @JsonProperty("Language")
-  public String getLanguage() {
-    return language;
-  }
-
-  @JsonProperty("Language")
-  public void setLanguage(String language) {
-    this.language = language;
-  }
-
   @JsonProperty("ModifiedTime")
   @JsonDeserialize(using = JodaDateDeserializer.class)
   public DateTime getModifiedTime() {
@@ -55,6 +46,16 @@ public class Content {
   @JsonProperty("ModifiedTime")
   public void setModifiedTime(DateTime modifiedTime) {
     this.modifiedTime = modifiedTime;
+  }
+
+  @JsonProperty("Language")
+  public String getLanguage() {
+    return language;
+  }
+
+  @JsonProperty("Language")
+  public void setLanguage(String language) {
+    this.language = language;
   }
 
   @JsonProperty("IsModified")

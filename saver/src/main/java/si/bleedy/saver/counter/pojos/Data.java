@@ -13,6 +13,7 @@ import java.util.Map;
     "Items"
 })
 public class Data {
+
   @JsonProperty("ContentName")
   private String contentName;
   @JsonProperty("Language")

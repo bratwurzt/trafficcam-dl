@@ -13,7 +13,6 @@ import java.util.Map;
 @JsonPropertyOrder({
     "RoutingVersion",
     "updated",
-    "TileVersion",
     "ModifiedTime",
     "copyright",
     "ModelVersion",
@@ -21,12 +20,11 @@ import java.util.Map;
     "Contents"
 })
 public class Counter {
+
   @JsonProperty("RoutingVersion")
   private Integer routingVersion;
   @JsonProperty("updated")
   private Integer updated;
-  @JsonProperty("TileVersion")
-  private Integer tileVersion;
   @JsonProperty("ModifiedTime")
   private DateTime modifiedTime;
   @JsonProperty("copyright")
@@ -58,16 +56,6 @@ public class Counter {
   @JsonProperty("updated")
   public void setUpdated(Integer updated) {
     this.updated = updated;
-  }
-
-  @JsonProperty("TileVersion")
-  public Integer getTileVersion() {
-    return tileVersion;
-  }
-
-  @JsonProperty("TileVersion")
-  public void setTileVersion(Integer tileVersion) {
-    this.tileVersion = tileVersion;
   }
 
   @JsonProperty("ModifiedTime")

@@ -9,7 +9,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
     "y_wgs",
-    "Description",
+    "stevci_lokacijaOpis",
     "Title",
     "ContentName",
     "x_wgs",
@@ -20,13 +20,14 @@ import java.util.Map;
     "Icon",
     "Data",
     "Id",
-    "stevci_lokacijaOpis"
+    "Description"
 })
 public class Item {
+
   @JsonProperty("y_wgs")
   private Double yWgs;
-  @JsonProperty("Description")
-  private String description;
+  @JsonProperty("stevci_lokacijaOpis")
+  private String stevciLokacijaOpis;
   @JsonProperty("Title")
   private String title;
   @JsonProperty("ContentName")
@@ -47,8 +48,8 @@ public class Item {
   private List<Datum> data = null;
   @JsonProperty("Id")
   private String id;
-  @JsonProperty("stevci_lokacijaOpis")
-  private String stevciLokacijaOpis;
+  @JsonProperty("Description")
+  private String description;
   @JsonIgnore
   private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
@@ -62,14 +63,14 @@ public class Item {
     this.yWgs = yWgs;
   }
 
-  @JsonProperty("Description")
-  public String getDescription() {
-    return description;
+  @JsonProperty("stevci_lokacijaOpis")
+  public String getStevciLokacijaOpis() {
+    return stevciLokacijaOpis;
   }
 
-  @JsonProperty("Description")
-  public void setDescription(String description) {
-    this.description = description;
+  @JsonProperty("stevci_lokacijaOpis")
+  public void setStevciLokacijaOpis(String stevciLokacijaOpis) {
+    this.stevciLokacijaOpis = stevciLokacijaOpis;
   }
 
   @JsonProperty("Title")
@@ -172,14 +173,14 @@ public class Item {
     this.id = id;
   }
 
-  @JsonProperty("stevci_lokacijaOpis")
-  public String getStevciLokacijaOpis() {
-    return stevciLokacijaOpis;
+  @JsonProperty("Description")
+  public String getDescription() {
+    return description;
   }
 
-  @JsonProperty("stevci_lokacijaOpis")
-  public void setStevciLokacijaOpis(String stevciLokacijaOpis) {
-    this.stevciLokacijaOpis = stevciLokacijaOpis;
+  @JsonProperty("Description")
+  public void setDescription(String description) {
+    this.description = description;
   }
 
   @JsonAnyGetter
