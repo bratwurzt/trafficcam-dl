@@ -49,7 +49,7 @@ public class WeatherSaver {
   }
 
   @Async
-  @Scheduled(fixedRateString = "${saver.weather.scheduledMillis}")
+//  @Scheduled(fixedRateString = "${saver.weather.scheduledMillis}")
   public void saveWeatherData() {
     try {
       Long lastChange = System.currentTimeMillis();

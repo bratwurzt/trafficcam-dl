@@ -1,12 +1,12 @@
 package si.bleedy.saver;
 
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import si.bleedy.saver.service.JsoupDao;
 import si.bleedy.saver.tow.CarTowSaver;
@@ -20,27 +20,50 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
+@DataJpaTest
 @RunWith(SpringRunner.class)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class SaverApplicationTests {
 
+  @Autowired
+  private StreetRepository streetRepository;
+
+  @Autowired
+  private CarRepository carRepository;
+
+  @Autowired
+  private TowTimelineCrudRepository towTimelineCrudRepository;
+
   @Test
-  public void testTowJsoup() {
-    try {
-      TowTimelineCrudRepository towTimelineCrudRepository = Mockito.mock(TowTimelineCrudRepository.class);
-      CarRepository carRepository = Mockito.mock(CarRepository.class);
-      StreetRepository streetRepository = Mockito.mock(StreetRepository.class);
-      JsoupDao jsoupDao = Mockito.mock(JsoupDao.class);
-      CarTowSaver carTowSaver = new CarTowSaver(towTimelineCrudRepository, carRepository, streetRepository, jsoupDao);
-      URL url = SaverApplicationTests.class.getResource("/tow_before.html");
-      String htmlBefore = new java.util.Scanner(new File(url.toURI()), StandardCharsets.UTF_8.name()).useDelimiter("\\Z").next();
-      Mockito.when(jsoupDao.downloadDoc()).then(invocationOnMock -> Jsoup.parse(htmlBefore));
+  public void testTowAddedCars() throws URISyntaxException, IOException {
+    JsoupDao jsoupDao = Mockito.mock(JsoupDao.class);
+    CarTowSaver carTowSaver = new CarTowSaver(towTimelineCrudRepository, carRepository, streetRepository, jsoupDao);
+    URL url = SaverApplicationTests.class.getResource("/tow_before.html");
+    String htmlBefore = new java.util.Scanner(new File(url.toURI()), StandardCharsets.UTF_8.name()).useDelimiter("\\Z").next();
+    Mockito.when(jsoupDao.downloadDoc()).then(invocationOnMock -> Jsoup.parse(htmlBefore));
 
-      carTowSaver.saveCarTows();
+    carTowSaver.saveCarTows();
+    url = SaverApplicationTests.class.getResource("/tow_after_added.html");
+    String htmlAfter = new java.util.Scanner(new File(url.toURI()), StandardCharsets.UTF_8.name()).useDelimiter("\\Z").next();
+    Mockito.when(jsoupDao.downloadDoc()).then(invocationOnMock -> Jsoup.parse(htmlAfter));
 
-//      Document parse = jsoupDao.downloadDoc();
-//      Document doc = Jsoup.connect("http://www.lpt.si/parkirisca_pajki/parkirisca/zapuscena_vozila").get();
-      System.out.println();
-    } catch (IOException | URISyntaxException e) {
-    }
+    carTowSaver.saveCarTows();
   }
+
+  @Test
+  public void testTowRemovedCars() throws URISyntaxException, IOException {
+    JsoupDao jsoupDao = Mockito.mock(JsoupDao.class);
+    CarTowSaver carTowSaver = new CarTowSaver(towTimelineCrudRepository, carRepository, streetRepository, jsoupDao);
+    URL url = SaverApplicationTests.class.getResource("/tow_before.html");
+    String htmlBefore = new java.util.Scanner(new File(url.toURI()), StandardCharsets.UTF_8.name()).useDelimiter("\\Z").next();
+    Mockito.when(jsoupDao.downloadDoc()).then(invocationOnMock -> Jsoup.parse(htmlBefore));
+
+    carTowSaver.saveCarTows();
+    url = SaverApplicationTests.class.getResource("/tow_after_removed.html");
+    String htmlAfter = new java.util.Scanner(new File(url.toURI()), StandardCharsets.UTF_8.name()).useDelimiter("\\Z").next();
+    Mockito.when(jsoupDao.downloadDoc()).then(invocationOnMock -> Jsoup.parse(htmlAfter));
+
+    carTowSaver.saveCarTows();
+  }
+
 }

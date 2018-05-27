@@ -52,7 +52,7 @@ public class CarTowSaver {
   }
 
   @Async
-  @Scheduled(fixedRateString = "${saver.tow.scheduledMillis:3600000}")
+  @Scheduled(fixedRateString = "${saver.tow.scheduledMillis}")
   public void saveCarTows() {
     int retries = 0;
     try {
@@ -154,6 +154,7 @@ public class CarTowSaver {
         } catch (IOException e) {
           LOG.error("Error, retry " + retries, e);
         }
+        return;
       }
       Thread.sleep(30000);
     } catch (ParseException | InterruptedException e) {
@@ -163,19 +164,19 @@ public class CarTowSaver {
 
 
   public <T> Set<T> union(Set<T> setA, Set<T> setB) {
-    Set<T> tmp = new TreeSet<T>(setA);
+    Set<T> tmp = new HashSet<T>(setA);
     tmp.addAll(setB);
     return tmp;
   }
 
   private <T> Set<T> intersection(Set<T> setA, Set<T> setB) {
-    Set<T> tmp = new TreeSet<T>(setA);
+    Set<T> tmp = new HashSet<T>(setA);
     tmp.retainAll(setB);
     return tmp;
   }
 
   private <T> Set<T> difference(Set<T> setA, Set<T> setB) {
-    Set<T> tmp = new TreeSet<T>(setA);
+    Set<T> tmp = new HashSet<>(setA);
     tmp.removeAll(setB);
     return tmp;
   }

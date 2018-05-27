@@ -43,7 +43,7 @@ public class CounterSaver {
   }
 
   @Async
-  @Scheduled(fixedRateString = "${saver.counter.scheduledMillis}")
+//  @Scheduled(fixedRateString = "${saver.counter.scheduledMillis}")
   public void saveCounters() {
     final Counter counters = countersClient.getCounters();
     final Content content = counters.getContents().iterator().next();
