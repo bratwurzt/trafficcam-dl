@@ -2,6 +2,7 @@ package si.bleedy.saver.tow.data;
 
 import org.hibernate.annotations.Type;
 import org.joda.time.DateTime;
+import org.springframework.lang.Nullable;
 
 import javax.persistence.*;
 import java.util.Optional;
@@ -89,6 +90,7 @@ public class TowTimeline implements Comparable<TowTimeline> {
     this.created = created;
   }
 
+  @Nullable
   @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
   public DateTime getTimePickedUp() {
     return timePickedUp;
